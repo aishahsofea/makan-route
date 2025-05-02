@@ -1,4 +1,4 @@
-import { Button } from "@heroui/button";
+import { Button } from "@/components/Button";
 import { Input } from "@heroui/input";
 import { Card } from "@heroui/card";
 
@@ -37,9 +37,7 @@ export const LandingPage = () => {
             />
           </div>
 
-          <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-md hover:cursor-pointer h-12 text-base">
-            Find makan spots
-          </Button>
+          <Button navigateTo="/makan-spots" text={"Find makan spots"} />
         </form>
       </Card>
       {/* Footer */}
