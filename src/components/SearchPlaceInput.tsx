@@ -11,23 +11,45 @@ type SearchInputProps = {
   label: string;
 };
 
-const placeSchema = z.object({
-  place_id: z.number(),
-  osm_id: z.number(),
-  lat: z.string(),
-  lon: z.string(),
-  class: z.union([
-    z.literal("place"),
-    z.literal("natural"),
-    z.literal("railway"),
-  ]),
-  type: z.string(),
-  name: z.string(),
-  display_name: z.string(),
-  boundingbox: z.tuple([z.string(), z.string(), z.string(), z.string()]),
+const geometrySchema = z.object({
+  location: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }),
+  viewport: z.object({
+    northeast: z.object({
+      lat: z.number(),
+      lng: z.number(),
+    }),
+    southwest: z.object({
+      lat: z.number(),
+      lng: z.number(),
+    }),
+  }),
 });
 
-const placesSchema = z.array(placeSchema);
+const placeSchema = z.object({
+  formatted_address: z.string(),
+  geometry: geometrySchema,
+  name: z.string(),
+  place_id: z.string(),
+  types: z.array(z.string()),
+  photos: z
+    .array(
+      z.object({
+        height: z.number(),
+        width: z.number(),
+        photo_reference: z.string(),
+      })
+    )
+    .optional(),
+});
+
+const placesSchema = z.object({
+  html_attributions: z.array(z.string()),
+  results: z.array(placeSchema),
+  status: z.string(),
+});
 
 const fetchLocations = async (query: string) => {
   const res = await fetch(`/api/location?q=${encodeURIComponent(query)}`);
@@ -37,10 +59,12 @@ const fetchLocations = async (query: string) => {
   return placesSchema.parse(await res.json());
 };
 
-export const SearchInput = (props: SearchInputProps) => {
+export const SearchPlaceInput = (props: SearchInputProps) => {
   const { name, label } = props;
   const [query, setQuery] = useState("");
-  const [selectedPlace, setSelectedPlace] = useState<z.infer<typeof placeSchema> | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<z.infer<
+    typeof placeSchema
+  > | null>(null);
   const debouncedQuery = useDebouncedSearch(query, 300);
 
   const { data: places } = useQuery({
@@ -56,7 +80,9 @@ export const SearchInput = (props: SearchInputProps) => {
 
   const handleSelection = (key: string | number | null) => {
     if (!key) return;
-    const place = places?.find((p) => p.place_id.toString() === key.toString());
+    const place = places?.results?.find(
+      (p) => p.place_id.toString() === key.toString()
+    );
     if (place) {
       setSelectedPlace(place);
     }
@@ -71,17 +97,25 @@ export const SearchInput = (props: SearchInputProps) => {
         label={label}
         onInputChange={handleChange}
         onSelectionChange={handleSelection}
+        items={places?.results || []}
+        value={selectedPlace?.name || query}
       >
-        {!places
-          ? null
-          : places.map(({ place_id, name }) => (
-              <AutocompleteItem key={place_id}>{name}</AutocompleteItem>
-            ))}
+        {(place) => (
+          <AutocompleteItem key={place.place_id}>{place.name}</AutocompleteItem>
+        )}
       </Autocomplete>
       {selectedPlace && (
         <>
-          <input type="hidden" name={`${name}-lat`} value={selectedPlace.lat} />
-          <input type="hidden" name={`${name}-lon`} value={selectedPlace.lon} />
+          <input
+            type="hidden"
+            name={`${name}-lat`}
+            value={selectedPlace.geometry.location.lat}
+          />
+          <input
+            type="hidden"
+            name={`${name}-lon`}
+            value={selectedPlace.geometry.location.lng}
+          />
         </>
       )}
     </div>

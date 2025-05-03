@@ -8,15 +8,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid query" }, { status: 400 });
   }
 
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
     query
-  )}&format=json`;
+  )}&key=${process.env.MAPS_API_KEY}`;
 
   const response = await fetch(url);
 
   if (!response.ok) {
     return NextResponse.json(
-      { error: "Failed to fetch from Nominatim" },
+      { error: "Failed to fetch a location" },
       { status: 502 }
     );
   }
