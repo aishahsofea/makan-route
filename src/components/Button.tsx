@@ -1,27 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Button as HeroButton } from "@heroui/button";
 
 type ButtonProps = {
+  type?: "button" | "submit" | "reset";
   text: string;
-  navigateTo?: string;
+  isDisabled?: boolean;
 };
 
-export const Button = ({ text, navigateTo }: ButtonProps) => {
-  const router = useRouter();
-
+export const Button = ({ type, text, isDisabled }: ButtonProps) => {
   const handleClick = () => {
-    if (navigateTo) {
-      router.push(navigateTo);
-    } else {
-      console.warn("No navigation path provided");
-    }
+    console.log("Button clicked");
   };
 
   return (
     <HeroButton
+      type={type ?? "button"}
       onPress={handleClick}
+      isDisabled={isDisabled ?? false}
       className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-md hover:cursor-pointer h-12 text-base"
     >
       {text}

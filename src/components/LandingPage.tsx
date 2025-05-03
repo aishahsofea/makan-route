@@ -1,6 +1,8 @@
 import { Button } from "@/components/Button";
 import { Input } from "@heroui/input";
 import { Card } from "@heroui/card";
+import Form from "next/form";
+import { SearchInput } from "@/components/SearchInput";
 
 export const LandingPage = () => {
   return (
@@ -13,32 +15,26 @@ export const LandingPage = () => {
             🍜
           </span>
         </h1>
-        <p className="">
-          Discover the best local makan spots along your travel route
-        </p>
+        <p>Discover the best local makan spots along your travel route</p>
       </div>
       {/* Search Form */}
       <Card className="w-full max-w-md p-6 shadow-lg rounded-lg">
-        <form className="space-y-4">
+        <Form action="/makan-spots" className="space-y-4">
           <div className="flex w-full flex-col md:flex-nowrap gap-4">
-            <Input
+            <SearchInput
+              name="starting-point"
               label="Starting Point"
               placeholder="e.g. Gerik, Perak"
-              variant="bordered"
-              type="text"
-              size="md"
             />
-            <Input
+            <SearchInput
+              name="destination"
               label="Destination"
-              placeholder="e.g. Kota Bharu, Kelantan"
-              variant="bordered"
-              type="text"
-              size="md"
+              placeholder="e.g. Gerik, Perak"
             />
           </div>
 
-          <Button navigateTo="/makan-spots" text={"Find makan spots"} />
-        </form>
+          <Button type="submit" text="Find makan spots" />
+        </Form>
       </Card>
       {/* Footer */}
       <footer className="mt-8 text-center text-sm">

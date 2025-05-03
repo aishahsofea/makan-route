@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { makanSpots } from "@/data/dummy-spots";
 import { Card, CardBody, CardFooter, CardHeader } from "@heroui/card";
 import { Image } from "@heroui/image";
@@ -31,11 +32,18 @@ const ratings = [
   { key: "5", label: "⭐️⭐️⭐️⭐️⭐️" },
 ];
 
-export default function MakanSpots() {
-  const spot = makanSpots[0];
+export default function MakanSpotsPage() {
+  const searchParams = useSearchParams();
+  const startingPoint = searchParams.get("starting-point");
+  const destination = searchParams.get("destination");
+
   return (
-    <>
-      <h2 className="text-3xl">Makan spots</h2>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Makan Spots</h1>
+      <p className="space-y-2 text-default-500">
+        Showing all the makan spots between <b>{startingPoint}</b> and{" "}
+        <b>{destination}</b>
+      </p>
 
       <div className="flex items-center justify-start p-6 gap-4 my-8 text-gray-300 border-1 border-default-100 rounded-lg">
         <h4>Filter:</h4>
@@ -98,6 +106,6 @@ export default function MakanSpots() {
           </Card>
         ))}
       </div>
-    </>
+    </div>
   );
 }
