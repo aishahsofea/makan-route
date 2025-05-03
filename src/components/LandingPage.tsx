@@ -21,16 +21,8 @@ export const LandingPage = () => {
       <Card className="w-full max-w-md p-6 shadow-lg rounded-lg">
         <Form action="/makan-spots" className="space-y-4">
           <div className="flex w-full flex-col md:flex-nowrap gap-4">
-            <SearchInput
-              name="starting-point"
-              label="Starting Point"
-              placeholder="e.g. Gerik, Perak"
-            />
-            <SearchInput
-              name="destination"
-              label="Destination"
-              placeholder="e.g. Gerik, Perak"
-            />
+            <SearchInput name="starting-point" label="Starting Point" />
+            <SearchInput name="destination" label="Destination" />
           </div>
 
           <Button type="submit" text="Find makan spots" />
