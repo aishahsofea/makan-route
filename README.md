@@ -8,6 +8,12 @@ First, make sure you are using the correct node version:
 nvm use
 ```
 
+Copy the `env.example` file to `.env` and set your environment variables:
+
+```bash
+cp env.example .env
+```
+
 Run the development server:
 
 ```bash
