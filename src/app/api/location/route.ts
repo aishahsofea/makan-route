@@ -8,9 +8,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid query" }, { status: 400 });
   }
 
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
-    query
-  )}&key=${process.env.MAPS_API_KEY}`;
+  const url = `${
+    process.env.TOMTOM_API_URL
+  }/search/2/poiSearch/${encodeURIComponent(query)}.json?key=${
+    process.env.TOMTOM_API_KEY
+  }&language=en-US&lat=3.064195&lon=101.663610&limit=5`;
 
   const response = await fetch(url);
 
@@ -21,6 +23,12 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const data = await response.json();
-  return NextResponse.json(data);
+  const rawData = await response.json();
+  const processedData = rawData.results.map((result: any) => ({
+    id: result.id,
+    address: result.address,
+    name: result.poi.name,
+    position: result.position,
+  }));
+  return NextResponse.json(processedData);
 }

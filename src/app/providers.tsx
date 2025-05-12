@@ -8,7 +8,7 @@ const queryClient = new QueryClient();
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <HeroUIProvider>{children}</HeroUIProvider>;
+      <HeroUIProvider>{children}</HeroUIProvider>
     </QueryClientProvider>
   );
 }

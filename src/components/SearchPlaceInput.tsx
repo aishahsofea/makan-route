@@ -11,50 +11,35 @@ type SearchInputProps = {
   label: string;
 };
 
-const geometrySchema = z.object({
-  location: z.object({
-    lat: z.number(),
-    lng: z.number(),
-  }),
-  viewport: z.object({
-    northeast: z.object({
-      lat: z.number(),
-      lng: z.number(),
-    }),
-    southwest: z.object({
-      lat: z.number(),
-      lng: z.number(),
-    }),
-  }),
-});
-
 const placeSchema = z.object({
-  formatted_address: z.string(),
-  geometry: geometrySchema,
+  id: z.string(),
+  address: z.object({
+    country: z.string(),
+    countryCode: z.string(),
+    countryCodeISO3: z.string(),
+    countrySecondarySubdivision: z.string(),
+    countrySubdivision: z.string(),
+    countrySubdivisionCode: z.string(),
+    countrySubdivisionName: z.string(),
+    freeformAddress: z.string(),
+    localName: z.string(),
+    municipality: z.string(),
+    postalCode: z.string(),
+    streetName: z.string(),
+  }),
   name: z.string(),
-  place_id: z.string(),
-  types: z.array(z.string()),
-  photos: z
-    .array(
-      z.object({
-        height: z.number(),
-        width: z.number(),
-        photo_reference: z.string(),
-      })
-    )
-    .optional(),
+  position: z.object({
+    lat: z.number(),
+    lon: z.number(),
+  }),
 });
 
-const placesSchema = z.object({
-  html_attributions: z.array(z.string()),
-  results: z.array(placeSchema),
-  status: z.string(),
-});
+const placesSchema = z.array(placeSchema);
 
 const fetchLocations = async (query: string) => {
   const res = await fetch(`/api/location?q=${encodeURIComponent(query)}`);
   if (!res.ok) {
-    throw new Error("Failed to fetch");
+    throw new Error("Failed to fetch places");
   }
   return placesSchema.parse(await res.json());
 };
@@ -80,9 +65,7 @@ export const SearchPlaceInput = (props: SearchInputProps) => {
 
   const handleSelection = (key: string | number | null) => {
     if (!key) return;
-    const place = places?.results?.find(
-      (p) => p.place_id.toString() === key.toString()
-    );
+    const place = places?.find((p) => p.id === key.toString());
     if (place) {
       setSelectedPlace(place);
     }
@@ -97,11 +80,11 @@ export const SearchPlaceInput = (props: SearchInputProps) => {
         label={label}
         onInputChange={handleChange}
         onSelectionChange={handleSelection}
-        items={places?.results || []}
-        value={selectedPlace?.name || query}
+        items={places || []}
+        value={selectedPlace?.name}
       >
         {(place) => (
-          <AutocompleteItem key={place.place_id}>{place.name}</AutocompleteItem>
+          <AutocompleteItem key={place.id}>{place.name}</AutocompleteItem>
         )}
       </Autocomplete>
       {selectedPlace && (
@@ -109,12 +92,12 @@ export const SearchPlaceInput = (props: SearchInputProps) => {
           <input
             type="hidden"
             name={`${name}-lat`}
-            value={selectedPlace.geometry.location.lat}
+            value={selectedPlace.position.lat}
           />
           <input
             type="hidden"
             name={`${name}-lon`}
-            value={selectedPlace.geometry.location.lng}
+            value={selectedPlace.position.lon}
           />
         </>
       )}
