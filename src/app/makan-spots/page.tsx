@@ -1,5 +1,5 @@
-import { MakanSpots } from "@/components/MakanSpots";
+import { MakanSpotsContainer } from "@/components/MakanSpotsContainer";
 
 export default function MakanSpotsPage() {
-  return <MakanSpots />;
+  return <MakanSpotsContainer />;
 }

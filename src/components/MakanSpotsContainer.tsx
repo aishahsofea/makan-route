@@ -1,15 +1,10 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Card, CardBody, CardFooter, CardHeader } from "@heroui/card";
-import { Image } from "@heroui/image";
-import { Chip } from "@heroui/chip";
-import { Button } from "@/components/Button";
 import { Select, SelectItem } from "@heroui/select";
-import { useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { z } from "zod";
-import { MapRoute } from "@/components/MapRoute";
+import { PlacesAlongRoute } from "@/components/PlacesAlongRoute";
 
 export const cuisines = [
   { key: "cat", label: "Cat" },
@@ -58,7 +53,7 @@ const fetchMakanSpots = async () => {
   return makanSpotsSchema.parse(await res.json());
 };
 
-export const MakanSpots = () => {
+export const MakanSpotsContainer = () => {
   const searchParams = useSearchParams();
   const startingPoint = searchParams.get("starting-point");
   const destination = searchParams.get("destination");
@@ -66,11 +61,6 @@ export const MakanSpots = () => {
   const originLongitude = Number(searchParams.get("starting-point-lon"));
   const destinationLatitude = Number(searchParams.get("destination-lat"));
   const destinationLongitude = Number(searchParams.get("destination-lon"));
-
-  const { data: makanSpots } = useQuery({
-    queryKey: ["makan-spots"],
-    queryFn: fetchMakanSpots,
-  });
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -80,8 +70,6 @@ export const MakanSpots = () => {
           Showing all the makan spots between <b>{startingPoint}</b> and{" "}
           <b>{destination}</b>
         </p>
-
-        <MapRoute />
         {originLatitude &&
           originLongitude &&
           destinationLatitude &&
@@ -112,46 +100,7 @@ export const MakanSpots = () => {
           </Select>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w">
-          {makanSpots?.map((spot) => (
-            <Card key={spot.id} className="p-2 shadow-lg rounded-lg">
-              <CardHeader className="flex gap-3">
-                <Image
-                  alt="heroui logo"
-                  height={80}
-                  radius="sm"
-                  src="https://avatars.githubusercontent.com/u/86160567?s=200&v=4"
-                  width={80}
-                />
-                <div className="flex flex-col">
-                  <p className="text-lg">{spot.name}</p>
-                  <p className="text-xs text-default-500">
-                    {spot.distanceFromStart} km from Ampang, Kuala Lumpur
-                  </p>
-                  <p className="text-xs text-default-500">
-                    {spot.distanceToEnd} km from Shah Alam, Selangor
-                  </p>
-                </div>
-              </CardHeader>
-              <CardBody>
-                <div className="flex justify-start gap-1 pb-2">
-                  {spot.tags.map((tag) => (
-                    <Chip key={tag} size="sm" radius="sm">
-                      {tag}
-                    </Chip>
-                  ))}
-                </div>
-                <p className="text-sm text-default-500">
-                  Rating: {spot.rating} ⭐
-                </p>
-                <p className="text-sm text-default-500">
-                  Address: {spot.address}
-                </p>
-              </CardBody>
-              <CardFooter>
-                <Button text=" Open in Google Maps" />
-              </CardFooter>
-            </Card>
-          ))}
+          <PlacesAlongRoute />
         </div>
       </div>
     </Suspense>
