@@ -11,7 +11,7 @@ export const Button = ({ type, text, isDisabled }: ButtonProps) => {
     <HeroButton
       type={type ?? "button"}
       isDisabled={isDisabled ?? false}
-      className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-md hover:cursor-pointer h-12 text-base"
+      className="w-full bg-teal-500 hover:bg-teal-600 text-white transition-all duration-300 hover:translate-y-[-2px]"
     >
       {text}
     </HeroButton>
