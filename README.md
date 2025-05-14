@@ -14,6 +14,11 @@ Copy the `env.example` file to `.env` and set your environment variables:
 cp env.example .env
 ```
 
+1. For places search, we are using TomTom API. You can get your API key by signing up for free at https://developer.tomtom.com/
+2. Replace `TOMTOM_API_KEY` in the `.env` file with your TomTom API key.
+3. For Redis, we are using Upstash dashboard. You can get your Redis URL and token by signing up for free at https://upstash.com/
+4. Replace `UPSTASH_REDIS_REST_TOKEN` and `UPSTASH_REDIS_REST_URL` in the `.env` file with yours, and make sure to omit the `https://` part of the URL.
+
 Run the development server:
 
 ```bash

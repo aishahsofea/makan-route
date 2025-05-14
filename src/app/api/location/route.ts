@@ -1,3 +1,4 @@
+import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -15,6 +16,14 @@ export async function GET(req: NextRequest) {
   }&language=en-US&lat=3.064195&lon=101.663610&limit=5`;
 
   try {
+    // Check data in cache
+    const cachedLocation = await redis.get(query);
+    if (cachedLocation) {
+      console.log("Cache hit");
+      return NextResponse.json(JSON.parse(cachedLocation));
+    }
+
+    // Fetch data from the TomTom API
     const response = await fetch(url);
     const rawData = await response.json();
     const processedData = rawData.results.map((result: any) => ({
@@ -23,6 +32,9 @@ export async function GET(req: NextRequest) {
       name: result.poi.name,
       position: result.position,
     }));
+
+    // Store the data in cache
+    await redis.set(query, JSON.stringify(processedData));
 
     return NextResponse.json(processedData);
   } catch (error) {
