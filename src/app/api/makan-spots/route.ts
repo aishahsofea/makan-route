@@ -1,20 +1,26 @@
+import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const coordinatesFromParams = searchParams.get("coordinates") ?? "";
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const coordinates = body.coordinates;
 
   const getURL = (lat: number, lon: number) =>
     `${process.env.TOMTOM_API_URL}/search/2/nearbySearch/.json?lat=${lat}&lon=${lon}&radius=3000&categorySet=7315&view=Unified&relatedPois=off&key=${process.env.TOMTOM_API_KEY}`;
-
-  const coordinates: Coordinate[] = JSON.parse(
-    decodeURIComponent(coordinatesFromParams)
-  );
 
   let results: any[] = [];
 
   for (const coord of coordinates) {
     try {
+      // Check data in cache
+      const cachedNearbyPlaces = await redis.get(`${coord.lat}:${coord.lon}`);
+      if (cachedNearbyPlaces) {
+        console.log("Cache hit");
+        const parsedData = JSON.parse(cachedNearbyPlaces);
+        results = [...results, ...parsedData];
+        continue;
+      }
+
       const url = getURL(coord.lat, coord.lon);
       const response = await fetch(url);
       if (!response.ok) {
@@ -30,6 +36,12 @@ export async function GET(req: NextRequest) {
           position: place.position,
         }));
       results = [...results, ...processedData];
+
+      // Store the data in cache
+      await redis.set(
+        `${coord.lat}:${coord.lon}`,
+        JSON.stringify(processedData)
+      );
     } catch (error) {
       console.error(`Failed to fetch data: `, error);
       return NextResponse.json(
@@ -41,7 +53,7 @@ export async function GET(req: NextRequest) {
 
   // Deduplicate results based on place ID
   const uniqueResults = Array.from(
-    new Map(results.map(item => [item.id, item])).values()
+    new Map(results.map((item) => [item.id, item])).values()
   );
 
   return NextResponse.json(uniqueResults, { status: 200 });

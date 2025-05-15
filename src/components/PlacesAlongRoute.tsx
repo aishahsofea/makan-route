@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { z } from "zod";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import {
   filterRouteByDistance,
   haversineDistance,
@@ -12,6 +12,8 @@ import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Phone, Globe, MapPin, Star, Navigation } from "lucide-react";
+import { useGetPlacesAlongRoute } from "@/hooks/useGetPlacesAlongRoute";
+import { useEffect } from "react";
 
 const pointsSchema = z.array(
   z.object({
@@ -84,6 +86,8 @@ const placeAlongRouteSchema = z.object({
   position: positionSchema,
 });
 
+const placesAlongRouteSchema = z.array(placeAlongRouteSchema);
+
 export const fetchRoute = async (locations: string) => {
   const res = await fetch(
     `/api/makan-spots/get-route?locations=${encodeURIComponent(locations)}`
@@ -92,18 +96,6 @@ export const fetchRoute = async (locations: string) => {
     throw new Error("Failed to fetch route");
   }
   return routeSchema.parse(await res.json());
-};
-
-const fetchPlacesAlongRoute = async (points: Coordinate[]) => {
-  const res = await fetch(
-    `/api/makan-spots?coordinates=${encodeURIComponent(JSON.stringify(points))}`
-  );
-  if (!res.ok) {
-    throw new Error("Failed to fetch places along route");
-  }
-
-  // IDK exactly the response structure, hence not using zod to parse it
-  return res.json();
 };
 
 export const PlacesAlongRoute = () => {
@@ -134,10 +126,13 @@ export const PlacesAlongRoute = () => {
     ? filterRouteByDistance(routeData.points as Coordinate[], 1000)
     : [];
 
-  const { data: places } = useSuspenseQuery({
-    queryKey: ["places-along-route", locations],
-    queryFn: () => fetchPlacesAlongRoute(filteredPoints as Coordinate[]),
-  });
+  const mutation = useGetPlacesAlongRoute(filteredPoints);
+
+  useEffect(() => {
+    mutation.mutate();
+  }, [JSON.stringify(filteredPoints)]);
+
+  const places: z.infer<typeof placesAlongRouteSchema> = mutation.data;
 
   const distanceFromOrigin = (makanSpotPosition: Coordinate) =>
     roundToTwoDecimalPlaces(
@@ -151,7 +146,7 @@ export const PlacesAlongRoute = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {places?.map((place: z.infer<typeof placeAlongRouteSchema>) => (
+      {places?.map((place) => (
         <Card
           key={place.id}
           className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 transition-all duration-300 hover:border-teal-500/50 hover:shadow-lg hover:shadow-teal-500/10 group"
