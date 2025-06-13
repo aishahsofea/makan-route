@@ -12,13 +12,13 @@ const bodySchema = z.object({
   }),
 });
 
-export const useGetPlacesAlongRoute = () => {
+export const useGetPlacesAlongRoute = (coordinates: Coordinate[]) => {
   const mutation = useMutation({
-    mutationFn: async (body: z.infer<typeof bodySchema>) => {
+    mutationFn: async () => {
       const route = await fetch("/api/makan-spots", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ coordinates }),
       });
 
       const data = await route.json();

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const locations = searchParams.get("locations") ?? "";
-
   try {
+    const locations = req.nextUrl.searchParams.get("locations") ?? "";
+
     const response = await fetch(
       `${
         process.env.TOMTOM_API_URL
@@ -15,9 +14,15 @@ export async function GET(req: NextRequest) {
 
     const rawData = await response.json();
     const points = rawData.routes[0].legs[0].points;
-    const processedData = { routes: { points } };
+    const processedPoints = points.map((point: any) => ({
+      lat: point.latitude,
+      lon: point.longitude,
+    }));
 
-    return NextResponse.json(processedData, { status: response.status });
+    return NextResponse.json(
+      { points: processedPoints, summary: rawData.routes[0].summary },
+      { status: response.status }
+    );
   } catch (error) {
     return NextResponse.json({ error: JSON.stringify(error) }, { status: 500 });
   }
