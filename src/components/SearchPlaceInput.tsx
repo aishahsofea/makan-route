@@ -14,18 +14,18 @@ type SearchInputProps = {
 const placeSchema = z.object({
   id: z.string(),
   address: z.object({
-    country: z.string(),
-    countryCode: z.string(),
-    countryCodeISO3: z.string(),
-    countrySecondarySubdivision: z.string(),
-    countrySubdivision: z.string(),
-    countrySubdivisionCode: z.string(),
-    countrySubdivisionName: z.string(),
-    freeformAddress: z.string(),
-    localName: z.string(),
-    municipality: z.string(),
-    postalCode: z.string(),
-    streetName: z.string(),
+    country: z.string().optional(),
+    countryCode: z.string().optional(),
+    countryCodeISO3: z.string().optional(),
+    countrySecondarySubdivision: z.string().optional(),
+    countrySubdivision: z.string().optional(),
+    countrySubdivisionCode: z.string().optional(),
+    countrySubdivisionName: z.string().optional(),
+    freeformAddress: z.string().optional(),
+    localName: z.string().optional(),
+    municipality: z.string().optional(),
+    postalCode: z.string().optional(),
+    streetName: z.string().optional(),
   }),
   name: z.string(),
   position: z.object({
@@ -41,7 +41,12 @@ const fetchLocations = async (query: string) => {
   if (!res.ok) {
     throw new Error("Failed to fetch places");
   }
-  return placesSchema.parse(await res.json());
+
+  const parsedPlaces = placesSchema.parse(await res.json());
+  if (parsedPlaces.length === 0) {
+    throw new Error("No places found");
+  }
+  return parsedPlaces;
 };
 
 export const SearchPlaceInput = (props: SearchInputProps) => {
@@ -52,11 +57,13 @@ export const SearchPlaceInput = (props: SearchInputProps) => {
   > | null>(null);
   const debouncedQuery = useDebouncedSearch(query, 300);
 
-  const { data: places } = useQuery({
+  const placesQuery = useQuery({
     queryKey: ["location", debouncedQuery],
     queryFn: () => fetchLocations(debouncedQuery),
     enabled: debouncedQuery.length >= 3,
   });
+
+  const places = placesQuery.data;
 
   const handleChange = (value: string) => {
     setQuery(value);
@@ -82,6 +89,8 @@ export const SearchPlaceInput = (props: SearchInputProps) => {
         onSelectionChange={handleSelection}
         items={places || []}
         value={selectedPlace?.name}
+        className="rounded-none"
+        style={{ color: "var(--foreground)" }}
       >
         {(place) => (
           <AutocompleteItem key={place.id}>{place.name}</AutocompleteItem>

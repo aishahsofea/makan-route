@@ -9,9 +9,10 @@ type ButtonProps = {
 export const Button = ({ type, text, isDisabled }: ButtonProps) => {
   return (
     <HeroButton
+      style={{ backgroundColor: "var(--secondary)" }}
       type={type ?? "button"}
       isDisabled={isDisabled ?? false}
-      className="w-full bg-teal-500 hover:bg-teal-600 text-white transition-all duration-300 hover:translate-y-[-2px]"
+      className="w-full transition-all duration-300 hover:translate-y-[-2px] rounded-none text-md"
     >
       {text}
     </HeroButton>

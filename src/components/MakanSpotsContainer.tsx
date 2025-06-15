@@ -54,14 +54,25 @@ export const MakanSpotsContainer = () => {
         <div className="flex-none">
           <h1 className="text-2xl font-medium mb-2">
             Showing all the makan spots between{" "}
-            <span className="text-teal-400 font-semibold">{origin}</span> and{" "}
-            <span className="text-teal-400 font-semibold">{destination}</span>
+            <span
+              style={{ backgroundColor: "var(--secondary)" }}
+              className="font-semibold px-1"
+            >
+              {origin}
+            </span>{" "}
+            and{" "}
+            <span
+              style={{ backgroundColor: "var(--secondary)" }}
+              className="font-semibold px-1"
+            >
+              {destination}
+            </span>
           </h1>
           {originLatitude &&
             originLongitude &&
             destinationLatitude &&
             destinationLongitude && (
-              <p className="text-gray-400 text-sm mb-6">
+              <p className="text-gray-600 text-sm mb-6">
                 The distance from {origin} to {destination} is approximately{" "}
                 {roundToTwoDecimalPlaces(
                   (routeData?.summary.lengthInMeters ?? 0) / 1000
@@ -69,8 +80,8 @@ export const MakanSpotsContainer = () => {
                 km.
               </p>
             )}
-
-          <div className="flex items-center justify-start p-6 gap-4 my-8 text-gray-300 border-1 border-default-100 rounded-lg">
+          {/* Filter section */}
+          {/* <div className="flex items-center justify-start p-6 gap-4 my-8 text-gray-300 border-1 border-default-100 rounded-none">
             <h4>Filter:</h4>
             <Select
               className="max-w-40"
@@ -88,7 +99,7 @@ export const MakanSpotsContainer = () => {
             >
               {(rating) => <SelectItem>{rating.label}</SelectItem>}
             </Select>
-          </div>
+          </div> */}
         </div>
         <div className="flex items-center justify-center min-h-[200px]">
           <Suspense

@@ -59,19 +59,19 @@ const poiSchema = z.object({
 });
 
 const addressSchema = z.object({
-  country: z.string(),
-  countryCode: z.string(),
-  countryCodeISO3: z.string(),
-  countrySecondarySubdivision: z.string(),
-  countrySubdivision: z.string(),
-  countrySubdivisionCode: z.string(),
-  countrySubdivisionName: z.string(),
-  freeformAddress: z.string(),
-  localName: z.string(),
-  streetName: z.string(),
+  country: z.string().optional(),
+  countryCode: z.string().optional(),
+  countryCodeISO3: z.string().optional(),
+  countrySecondarySubdivision: z.string().optional(),
+  countrySubdivision: z.string().optional(),
+  countrySubdivisionCode: z.string().optional(),
+  countrySubdivisionName: z.string().optional(),
+  freeformAddress: z.string().optional(),
+  localName: z.string().optional(),
+  streetName: z.string().optional(),
   streetNumber: z.string().optional(),
-  municipality: z.string(),
-  postalCode: z.string(),
+  municipality: z.string().optional(),
+  postalCode: z.string().optional(),
 });
 
 const positionSchema = z.object({
@@ -88,9 +88,13 @@ const placeAlongRouteSchema = z.object({
 
 const placesAlongRouteSchema = z.array(placeAlongRouteSchema);
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
 export const fetchRoute = async (locations: string) => {
   const res = await fetch(
-    `/api/makan-spots/get-route?locations=${encodeURIComponent(locations)}`
+    `${baseUrl}/api/makan-spots/get-route?locations=${encodeURIComponent(
+      locations
+    )}`
   );
   if (!res.ok) {
     throw new Error("Failed to fetch route");
@@ -149,10 +153,10 @@ export const PlacesAlongRoute = () => {
       {places?.map((place) => (
         <Card
           key={place.id}
-          className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 transition-all duration-300 hover:border-teal-500/50 hover:shadow-lg hover:shadow-teal-500/10 group"
+          className=" rounded-none overflow-hidden border border-gray-800 transition-all duration-300 hover:shadow-lg group"
         >
           <CardHeader className="flex justify-between gap-3">
-            <h2 className="text-xl font-medium group-hover:text-teal-400 transition-colors">
+            <h2 className="text-xl font-medium transition-colors">
               {place.poi.name}
             </h2>
             {place.poi.categories
@@ -161,7 +165,8 @@ export const PlacesAlongRoute = () => {
                 <Chip
                   size="sm"
                   key={category}
-                  className="bg-gray-800 hover:bg-gray-700 text-teal-300 border-0 font-semibold"
+                  style={{ color: "var(--secondary)" }}
+                  className="bg-gray-800 hover:bg-gray-700 border-0 font-semibold rounded-sm"
                 >
                   {category}
                 </Chip>
@@ -169,15 +174,15 @@ export const PlacesAlongRoute = () => {
           </CardHeader>
           <CardBody>
             {/* Distance Info */}
-            <div className="space-y-1 mb-4 text-sm text-gray-300">
+            <div className="space-y-1 mb-4 text-sm text-gray-700">
               <div className="flex items-center gap-2">
-                <Navigation size={14} className="text-teal-400" />
+                <Navigation style={{ color: "var(--secondary)" }} size={14} />
                 <span>
                   {distanceFromOrigin(place.position)} km from {origin}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <Navigation size={14} className="text-teal-400" />
+                <Navigation style={{ color: "var(--secondary)" }} size={14} />
                 <span>
                   {distanceFromDestination(place.position)} km from{" "}
                   {destination}
@@ -186,8 +191,12 @@ export const PlacesAlongRoute = () => {
             </div>
 
             {/* Address */}
-            <div className="flex items-start gap-2 mb-4 text-sm text-gray-400">
-              <MapPin size={14} className="text-teal-400 mt-1 flex-shrink-0" />
+            <div className="flex items-start gap-2 mb-4 text-sm text-gray-700">
+              <MapPin
+                style={{ color: "var(--secondary)" }}
+                size={14}
+                className="mt-1 flex-shrink-0"
+              />
               <p>{place.address.freeformAddress}</p>
             </div>
 
@@ -195,10 +204,10 @@ export const PlacesAlongRoute = () => {
             <div className="space-y-2 mb-5 text-sm">
               {place.poi.phone && (
                 <div className="flex items-center gap-2">
-                  <Phone size={14} className="text-teal-400" />
+                  <Phone size={14} className="" />
                   <a
                     href={`tel:${place.poi.phone}`}
-                    className="text-gray-400 hover:text-teal-300 transition-colors"
+                    className="text-gray-700 transition-colors"
                   >
                     {place.poi.phone}
                   </a>
@@ -207,12 +216,12 @@ export const PlacesAlongRoute = () => {
 
               {place.poi.url && (
                 <div className="flex items-center gap-2">
-                  <Globe size={14} className="text-teal-400" />
+                  <Globe size={14} style={{ color: "var(--secondary)" }} />
                   <a
                     href={place.poi.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-teal-300 transition-colors truncate"
+                    className="text-gray-700 transition-colors truncate"
                   >
                     {place.poi.url.replace(/^https?:\/\//, "")}
                   </a>
@@ -222,7 +231,10 @@ export const PlacesAlongRoute = () => {
           </CardBody>
           <CardFooter>
             <Button
-              className="w-full bg-teal-500 hover:bg-teal-600 text-white transition-all duration-300 hover:translate-y-[-2px]"
+              style={{
+                backgroundColor: "var(--secondary)",
+              }}
+              className="w-full transition-all duration-300 hover:translate-y-[-2px] rounded-none"
               onPress={() =>
                 window.open(
                   `https://www.google.com/maps?q=${place.position.lat},${place.position.lon}`,

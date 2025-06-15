@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       // Check data in cache
       const cachedNearbyPlaces = await redis.get(`${coord.lat}:${coord.lon}`);
       if (cachedNearbyPlaces) {
-        console.log("Cache hit");
+        console.log("Cache hit for nearby places");
         const parsedData = JSON.parse(cachedNearbyPlaces);
         results = [...results, ...parsedData];
         continue;

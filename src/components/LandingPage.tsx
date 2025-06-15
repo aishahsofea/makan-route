@@ -18,14 +18,14 @@ export const LandingPage = () => {
         <p>Discover the best local makan spots along your travel route</p>
       </div>
       {/* Search Form */}
-      <Card className="w-full max-w-md p-6 shadow-lg  bg-gray-900 rounded-lg overflow-hidden border border-gray-800 transition-all duration-300 hover:border-teal-500/50 hover:shadow-lg hover:shadow-teal-500/10 group">
+      <Card className="w-full max-w-md p-6 shadow-lg rounded-none overflow-hidden border border-gray-800 transition-all duration-300 hover:shadow-lg group">
         <Form action="/makan-spots" className="space-y-4">
           <div className="flex w-full flex-col md:flex-nowrap gap-4">
             <SearchPlaceInput name="origin" label="Starting Point" />
             <SearchPlaceInput name="destination" label="Destination" />
           </div>
 
-          <Button type="submit" text="Find makan spots" />
+          <Button type="submit" text="Find makan spots!" />
         </Form>
       </Card>
       {/* Footer */}
