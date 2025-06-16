@@ -14,6 +14,8 @@ import { Chip } from "@heroui/chip";
 import { Phone, Globe, MapPin, Star, Navigation } from "lucide-react";
 import { useGetPlacesAlongRoute } from "@/hooks/useGetPlacesAlongRoute";
 import { useEffect } from "react";
+import { getBoundingBox } from "@/utils/boundingBox";
+import { useInView } from "react-intersection-observer";
 
 const pointsSchema = z.array(
   z.object({
@@ -34,59 +36,64 @@ const routeSchema = z.object({
   }),
 });
 
-const classificationSchema = z.object({
-  code: z.string(),
-  names: z.array(
-    z.object({
-      nameLocale: z.string(),
-      name: z.string(),
-    })
-  ),
+const iconSchema = z.object({
+  prefix: z.string().url(),
+  suffix: z.string(),
 });
 
-const poiSchema = z.object({
-  categories: z.array(z.string()),
-  categorySet: z.array(
-    z.object({
-      id: z.number(),
-    })
-  ),
-  classifications: z.array(classificationSchema),
+const categorySchema = z.object({
+  id: z.number(),
   name: z.string(),
-  brands: z.array(z.object({ name: z.string(), logo: z.string().optional() })),
-  phone: z.string().optional(),
-  url: z.string().optional(),
+  short_name: z.string(),
+  plural_name: z.string(),
+  icon: iconSchema,
 });
 
-const addressSchema = z.object({
-  country: z.string().optional(),
-  countryCode: z.string().optional(),
-  countryCodeISO3: z.string().optional(),
-  countrySecondarySubdivision: z.string().optional(),
-  countrySubdivision: z.string().optional(),
-  countrySubdivisionCode: z.string().optional(),
-  countrySubdivisionName: z.string().optional(),
-  freeformAddress: z.string().optional(),
-  localName: z.string().optional(),
-  streetName: z.string().optional(),
-  streetNumber: z.string().optional(),
-  municipality: z.string().optional(),
-  postalCode: z.string().optional(),
+const geocodeSchema = z.object({
+  latitude: z.number(),
+  longitude: z.number(),
 });
 
-const positionSchema = z.object({
-  lat: z.number(),
-  lon: z.number(),
+const geocodesSchema = z.object({
+  drop_off: geocodeSchema,
+  main: geocodeSchema,
+  roof: geocodeSchema,
+});
+
+const locationSchema = z.object({
+  address: z.string().optional(),
+  country: z.string(),
+  cross_street: z.string(),
+  formatted_address: z.string(),
+  locality: z.string(),
+  postcode: z.string(),
+  region: z.string(),
+});
+
+const relatedPlaceParentSchema = z.object({
+  fsq_id: z.string(),
+  name: z.string(),
+  categories: z.array(categorySchema),
 });
 
 const placeAlongRouteSchema = z.object({
-  id: z.string(),
-  address: addressSchema,
-  poi: poiSchema,
-  position: positionSchema,
+  fsq_id: z.string(),
+  categories: z.array(categorySchema),
+  chains: z.array(z.any()), // Adjust if chains have a known structure
+  closed_bucket: z.string(),
+  distance: z.number(),
+  geocodes: geocodesSchema,
+  link: z.string(),
+  location: locationSchema,
+  name: z.string(),
+  related_places: z.object({
+    parent: relatedPlaceParentSchema.optional(),
+  }),
+
+  timezone: z.string(),
 });
 
-const placesAlongRouteSchema = z.array(placeAlongRouteSchema);
+export const placesAlongRouteSchema = z.array(placeAlongRouteSchema);
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -102,8 +109,14 @@ export const fetchRoute = async (locations: string) => {
   return routeSchema.parse(await res.json());
 };
 
-export const PlacesAlongRoute = () => {
+type PlacesAlongRouteParams = {
+  boundingBox: ReturnType<typeof getBoundingBox>;
+};
+
+export const PlacesAlongRoute = (params: PlacesAlongRouteParams) => {
   const searchParams = useSearchParams();
+  const { ref, inView } = useInView();
+
   const origin = searchParams.get("origin");
   const destination = searchParams.get("destination");
   const originLatitude = Number(searchParams.get("origin-lat"));
@@ -130,13 +143,22 @@ export const PlacesAlongRoute = () => {
     ? filterRouteByDistance(routeData.points as Coordinate[], 1000)
     : [];
 
-  const mutation = useGetPlacesAlongRoute(filteredPoints);
+  const {
+    status,
+    data,
+    error,
+    isFetching,
+    isFetchingNextPage,
+    isFetchingPreviousPage,
+    fetchNextPage,
+    fetchPreviousPage,
+    hasNextPage,
+    hasPreviousPage,
+  } = useGetPlacesAlongRoute(params.boundingBox);
 
-  useEffect(() => {
-    mutation.mutate();
-  }, [JSON.stringify(filteredPoints)]);
+  console.log({ isFetchingNextPage, hasNextPage, hasPreviousPage });
 
-  const places: z.infer<typeof placesAlongRouteSchema> = mutation.data;
+  console.log({ status, data });
 
   const distanceFromOrigin = (makanSpotPosition: Coordinate) =>
     roundToTwoDecimalPlaces(
@@ -148,60 +170,86 @@ export const PlacesAlongRoute = () => {
       haversineDistance(destinationCoordinates, makanSpotPosition) / 1000
     );
 
+  useEffect(() => {
+    if (inView) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, inView]);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {places?.map((place) => (
-        <Card
-          key={place.id}
-          className=" rounded-none overflow-hidden border border-gray-800 transition-all duration-300 hover:shadow-lg group"
+    <div className="flex flex-col">
+      {data?.pages.map((places, pageIndex) => (
+        <div
+          key={pageIndex}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 my-2"
         >
-          <CardHeader className="flex justify-between gap-3">
-            <h2 className="text-xl font-medium transition-colors">
-              {place.poi.name}
-            </h2>
-            {place.poi.categories
-              .filter((category) => category !== "restaurant")
-              .map((category) => (
-                <Chip
-                  size="sm"
-                  key={category}
-                  style={{ color: "var(--secondary)" }}
-                  className="bg-gray-800 hover:bg-gray-700 border-0 font-semibold rounded-sm"
-                >
-                  {category}
-                </Chip>
-              ))}
-          </CardHeader>
-          <CardBody>
-            {/* Distance Info */}
-            <div className="space-y-1 mb-4 text-sm text-gray-700">
-              <div className="flex items-center gap-2">
-                <Navigation style={{ color: "var(--secondary)" }} size={14} />
-                <span>
-                  {distanceFromOrigin(place.position)} km from {origin}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Navigation style={{ color: "var(--secondary)" }} size={14} />
-                <span>
-                  {distanceFromDestination(place.position)} km from{" "}
-                  {destination}
-                </span>
-              </div>
-            </div>
+          {places.map((place) => (
+            <Card
+              key={place.fsq_id}
+              className=" rounded-none overflow-hidden border border-gray-800 transition-all duration-300 hover:shadow-lg group"
+            >
+              <CardHeader className="flex justify-between gap-3">
+                <h2 className="text-xl font-medium transition-colors">
+                  {place.name}
+                </h2>
+                <div className="flex items-center gap-1">
+                  {place.categories.map((category) => (
+                    <Chip
+                      size="sm"
+                      key={category.id}
+                      style={{ color: "var(--secondary)" }}
+                      className="bg-gray-800 hover:bg-gray-700 border-0 font-semibold rounded-sm"
+                    >
+                      {category.short_name}
+                    </Chip>
+                  ))}
+                </div>
+              </CardHeader>
+              <CardBody>
+                {/* Distance Info */}
+                <div className="space-y-1 mb-4 text-sm text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <Navigation
+                      style={{ color: "var(--secondary)" }}
+                      size={14}
+                    />
+                    <span>
+                      {distanceFromOrigin({
+                        lat: place.geocodes.main.latitude,
+                        lon: place.geocodes.main.longitude,
+                      })}{" "}
+                      km from {origin}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Navigation
+                      style={{ color: "var(--secondary)" }}
+                      size={14}
+                    />
+                    <span>
+                      {distanceFromDestination({
+                        lat: place.geocodes.main.latitude,
+                        lon: place.geocodes.main.longitude,
+                      })}{" "}
+                      km from {destination}
+                    </span>
+                  </div>
+                </div>
 
-            {/* Address */}
-            <div className="flex items-start gap-2 mb-4 text-sm text-gray-700">
-              <MapPin
-                style={{ color: "var(--secondary)" }}
-                size={14}
-                className="mt-1 flex-shrink-0"
-              />
-              <p>{place.address.freeformAddress}</p>
-            </div>
+                {/* Address */}
+                {place.location.address ? (
+                  <div className="flex items-start gap-2 mb-4 text-sm text-gray-700">
+                    <MapPin
+                      style={{ color: "var(--secondary)" }}
+                      size={14}
+                      className="mt-1 flex-shrink-0"
+                    />
+                    <p>{place.location.address}</p>
+                  </div>
+                ) : null}
 
-            {/* Contact Info */}
-            <div className="space-y-2 mb-5 text-sm">
+                {/* Contact Info */}
+                {/* <div className="space-y-2 mb-5 text-sm">
               {place.poi.phone && (
                 <div className="flex items-center gap-2">
                   <Phone size={14} className="" />
@@ -227,26 +275,44 @@ export const PlacesAlongRoute = () => {
                   </a>
                 </div>
               )}
-            </div>
-          </CardBody>
-          <CardFooter>
-            <Button
-              style={{
-                backgroundColor: "var(--secondary)",
-              }}
-              className="w-full transition-all duration-300 hover:translate-y-[-2px] rounded-none"
-              onPress={() =>
-                window.open(
-                  `https://www.google.com/maps?q=${place.position.lat},${place.position.lon}`,
-                  "_blank"
-                )
-              }
-            >
-              View in Google Maps
-            </Button>
-          </CardFooter>
-        </Card>
+            </div> */}
+              </CardBody>
+              <CardFooter>
+                <Button
+                  style={{
+                    backgroundColor: "var(--secondary)",
+                  }}
+                  className="w-full transition-all duration-300 hover:translate-y-[-2px] rounded-none"
+                  onPress={() =>
+                    // window.open(
+                    //   `https://www.google.com/maps?q=${place.position.lat},${place.position.lon}`,
+                    //   "_blank"
+                    // )
+                    console.log(
+                      "will open Google Maps with coordinates:",
+                      place.geocodes.main.latitude,
+                      place.geocodes.main.longitude
+                    )
+                  }
+                >
+                  View in Google Maps
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       ))}
+
+      {hasNextPage && (
+        <button
+          ref={ref}
+          onClick={() => fetchNextPage()}
+          disabled={isFetchingNextPage}
+          className="my-4"
+        >
+          {isFetchingNextPage ? "Loading..." : "Load More"}
+        </button>
+      )}
     </div>
   );
 };

@@ -1,60 +1,44 @@
 import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const coordinates = body.coordinates;
+const RESTAURANT_CATEGORY = "4d4b7105d754a06374d81259"; // Foursquare category ID for restaurants
 
-  const getURL = (lat: number, lon: number) =>
-    `${process.env.TOMTOM_API_URL}/search/2/nearbySearch/.json?lat=${lat}&lon=${lon}&radius=3000&categorySet=7315&view=Unified&relatedPois=off&key=${process.env.TOMTOM_API_KEY}`;
+export async function GET(req: NextRequest) {
+  const ne = req.nextUrl.searchParams.get("ne") ?? "";
+  const sw = req.nextUrl.searchParams.get("sw") ?? "";
 
-  let results: any[] = [];
+  const REDIS_BOUNDING_BOX_KEY = `boundingBox:${ne}:${sw}`;
 
-  for (const coord of coordinates) {
-    try {
-      // Check data in cache
-      const cachedNearbyPlaces = await redis.get(`${coord.lat}:${coord.lon}`);
-      if (cachedNearbyPlaces) {
-        console.log("Cache hit for nearby places");
-        const parsedData = JSON.parse(cachedNearbyPlaces);
-        results = [...results, ...parsedData];
-        continue;
-      }
+  const url = `${process.env.FOURSQUARE_API_URL}/places/search?categories=${RESTAURANT_CATEGORY}&ne=${ne}&sw=${sw}&limit=50`;
 
-      const url = getURL(coord.lat, coord.lon);
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const processedData = data.results
-        .filter((place: any) => place.type === "POI")
-        .map((place: any) => ({
-          id: place.id,
-          poi: place.poi,
-          address: place.address,
-          position: place.position,
-        }));
-      results = [...results, ...processedData];
+  const options = {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: process.env.FOURSQUARE_API_KEY || "",
+    },
+  };
 
-      // Store the data in cache
-      await redis.set(
-        `${coord.lat}:${coord.lon}`,
-        JSON.stringify(processedData)
-      );
-    } catch (error) {
-      console.error(`Failed to fetch data: `, error);
-      return NextResponse.json(
-        { error: JSON.stringify(error) },
-        { status: 500 }
-      );
+  try {
+    const cachedNearbyPlaces = await redis.get(REDIS_BOUNDING_BOX_KEY);
+
+    if (cachedNearbyPlaces) {
+      console.log("Cache hit for nearby places");
+      const parsedData = JSON.parse(cachedNearbyPlaces);
+      return NextResponse.json(parsedData, { status: 200 });
     }
+
+    const response = await fetch(url, options);
+    console.log({ response });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const { results } = await response.json();
+
+    await redis.set(REDIS_BOUNDING_BOX_KEY, JSON.stringify(results));
+
+    return NextResponse.json(results, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ error: JSON.stringify(error) }, { status: 500 });
   }
-
-  // Deduplicate results based on place ID
-  const uniqueResults = Array.from(
-    new Map(results.map((item) => [item.id, item])).values()
-  );
-
-  return NextResponse.json(uniqueResults, { status: 200 });
 }
