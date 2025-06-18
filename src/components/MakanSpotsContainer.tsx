@@ -7,6 +7,7 @@ import { fetchRoute, PlacesAlongRoute } from "@/components/PlacesAlongRoute";
 import { roundToTwoDecimalPlaces } from "@/utils/haversine";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Spinner } from "@heroui/spinner";
+import { getBoundingBox } from "@/utils/boundingBox";
 
 export const cuisines = [
   { key: "cat", label: "Cat" },
@@ -47,6 +48,8 @@ export const MakanSpotsContainer = () => {
     queryKey: ["route", locations],
     queryFn: () => fetchRoute(locations),
   });
+
+  const boundingBox = getBoundingBox(routeData?.points || []);
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -111,7 +114,7 @@ export const MakanSpotsContainer = () => {
               />
             }
           >
-            <PlacesAlongRoute />
+            <PlacesAlongRoute boundingBox={boundingBox} />
           </Suspense>
         </div>
       </div>
