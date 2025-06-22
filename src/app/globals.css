@@ -21,7 +21,7 @@
   --destructive: 0 100% 50%;
   --destructive-foreground: rgb(14 25 34);
   --border: 0 0% 20%;
-  --input: 0 0% 20%;
+  --input: 45 93% 94%;
   --ring: 170 80% 50%;
   --radius: 0.5rem;
 }
@@ -32,6 +32,16 @@
   }
   .font-outline-4 {
     -webkit-text-stroke: 4px rgb(14 25 34);
+  }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-clamp: 2;
   }
 }
 

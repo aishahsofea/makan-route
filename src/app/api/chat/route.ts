@@ -1,3 +1,4 @@
+import { getNearbyFoods } from "@/lib/ai/tools/getNearbyFoods";
 import { getRoute } from "@/lib/ai/tools/getRoute";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
@@ -23,15 +24,22 @@ export async function POST(request: Request) {
     try {
       const result = streamText({
         model: openai("gpt-4o-mini"),
-        messages,
-        // tools: {
-        //   // getRoute,
-        //   getCurrentLocation: {
-        //     description:
-        //       "Get the user's current location. Always ask for confirmation before using this tool.",
-        //     parameters: z.object({}),
-        //   },
-        // },
+        messages: [
+          {
+            role: "system",
+            content: `You are a helpful assistant for finding nearby food places. When you use the getNearbyFoods tool, return the structured data directly as JSON without formatting it as text. The data will be automatically displayed as beautiful cards in the UI. Do not add any additional text formatting or explanations when returning nearby food data.`
+          },
+          ...messages
+        ],
+        tools: {
+          // getRoute,
+          // getCurrentLocation: {
+          //   description:
+          //     "Get the user's current location. Always ask for confirmation before using this tool.",
+          //   parameters: z.object({}),
+          // },
+          getNearbyFoods,
+        },
       });
 
       return result.toDataStreamResponse();

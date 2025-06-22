@@ -1,7 +1,8 @@
 "use client";
 
 import { MultimodalInput } from "@/components/MultimodalInput";
-import { useChat } from "@ai-sdk/react";
+import { NearbyFoodsCards } from "@/components/NearbyFoodsCards";
+import { useChat, Message } from "@ai-sdk/react";
 
 export default function ChatPage() {
   const { messages, input, setInput, handleSubmit, status, error } = useChat({
@@ -13,26 +14,78 @@ export default function ChatPage() {
     },
   });
 
-  console.log({ messages, status, error });
+  const renderMessageContent = (content: string, parts: Message["parts"]) => {
+    console.log("Rendering message content...");
+    try {
+      // Try to parse the content as JSON to check if it's structured data
+      const parsed = JSON.parse(content);
+
+      console.log("Parsed content:", parsed);
+
+      // Check if it's our nearby foods data structure
+      if (parsed.type === "nearby_foods") {
+        return (
+          <NearbyFoodsCards data={parsed} location={parsed.locationName} />
+        );
+      }
+    } catch (e) {
+      // If parsing fails, it's regular text content
+    }
+
+    console.log({parts})
+
+    // Return regular text content
+    return <p>{status === "streaming" ? "streaming..." : content}</p>;
+  };
+
+  const isStructuredContent = (content: string) => {
+    try {
+      const parsed = JSON.parse(content);
+      return parsed.type === "nearby_foods";
+    } catch (e) {
+      return false;
+    }
+  };
 
   return (
-    <div className="relative w-full h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto px-16 pt-4 pb-20">
+    <div className="relative w-full h-screen flex flex-col max-w-3xl">
+      <div className="flex-1 overflow-y-auto pt-4 pb-20 max-h-4/5">
         <div className="space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className="p-4 rounded-lg border-1 border-zinc-700"
-            >
-              <p>{message.role === "user" ? "User: " : "AI: "}</p>
-              <p className="text-sm">{message.content}</p>
-            </div>
-          ))}
+          {messages.map((message) => {
+            const isUserMessage = message.role === "user";
+            const isAiMessage = message.role === "assistant";
+            const isStructured = isStructuredContent(message.content);
+
+            return (
+              <div
+                key={message.id}
+                className={`flex ${
+                  isUserMessage ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`${
+                    isUserMessage
+                      ? "p-2 px-4 rounded-full size-fit bg-amber-300"
+                      : isStructured
+                      ? "w-full"
+                      : "p-2 px-4 rounded-full"
+                  }`}
+                >
+                  {isUserMessage ? (
+                    <p>{message.content}</p>
+                  ) : (
+                    renderMessageContent(message.content, message.parts)
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 my-16 bg-background ">
-        <div className="max-w-4xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 p-4 my-16">
+        <div className="max-w-3xl mx-auto">
           <MultimodalInput
             input={input}
             setInput={setInput}

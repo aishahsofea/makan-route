@@ -36,14 +36,12 @@ export const getRoute = tool({
       }`
     );
 
-    console.log(response);
-
     if (!response.ok) {
       throw new Error(`Failed to fetch route: ${response.statusText}`);
     }
 
     const rawData = await response.json();
-    
+
     // TomTom API returns routes[0].legs[0].points structure
     const routeData = rawData.routes[0].legs[0].points.map((point: any) => ({
       lat: point.latitude,

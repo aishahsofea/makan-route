@@ -20,7 +20,6 @@ export const MultimodalInput = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleInput = (value: string) => {
-    console.log("Input changed:", value);
     setInput(value);
   };
 
@@ -28,7 +27,7 @@ export const MultimodalInput = ({
     <Textarea
       ref={textareaRef}
       isDisabled={isDisabled}
-      className="min-h-[24px] max-h-[calc(75dvh)] border-1 border-zinc-700 overflow-hidden resize-none rounded-xl"
+      className="min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl"
       placeholder="Send a message..."
       value={input}
       onValueChange={handleInput}
