@@ -1,7 +1,7 @@
 "use client";
 
 import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
-import { Autocomplete, AutocompleteItem } from "@heroui/autocomplete";
+import { Autocomplete, AutocompleteItem } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";

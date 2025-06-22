@@ -1,4 +1,6 @@
-import { Button as HeroButton } from "@heroui/button";
+"use client";
+
+import { Button as HeroButton } from "@heroui/react";
 
 type ButtonProps = {
   type?: "button" | "submit" | "reset";

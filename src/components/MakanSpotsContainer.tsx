@@ -1,12 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Select, SelectItem } from "@heroui/select";
+import { Spinner } from "@heroui/react";
 import { Suspense } from "react";
 import { fetchRoute, PlacesAlongRoute } from "@/components/PlacesAlongRoute";
 import { roundToTwoDecimalPlaces } from "@/utils/haversine";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Spinner } from "@heroui/spinner";
 import { getBoundingBox } from "@/utils/boundingBox";
 
 export const cuisines = [

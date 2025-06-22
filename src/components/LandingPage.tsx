@@ -1,6 +1,7 @@
+"use client";
+
 import { Button } from "@/components/Button";
-import { Input } from "@heroui/input";
-import { Card } from "@heroui/card";
+import { Card } from "@heroui/react";
 import Form from "next/form";
 import { SearchPlaceInput } from "@/components/SearchPlaceInput";
 

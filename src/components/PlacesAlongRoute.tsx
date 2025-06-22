@@ -8,9 +8,14 @@ import {
   haversineDistance,
   roundToTwoDecimalPlaces,
 } from "@/utils/haversine";
-import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
-import { Button } from "@heroui/button";
-import { Chip } from "@heroui/chip";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Button,
+  Chip,
+} from "@heroui/react";
 import { Phone, Globe, MapPin, Star, Navigation } from "lucide-react";
 import { useGetPlacesAlongRoute } from "@/hooks/useGetPlacesAlongRoute";
 import { useEffect } from "react";
