@@ -1,3 +1,4 @@
+import { getFoodsAlongTheRoute } from "@/lib/ai/tools/getFoodsAlongTheRoute";
 import { getNearbyFoods } from "@/lib/ai/tools/getNearbyFoods";
 import { getRoute } from "@/lib/ai/tools/getRoute";
 import { openai } from "@ai-sdk/openai";
@@ -32,13 +33,14 @@ export async function POST(request: Request) {
           ...messages,
         ],
         tools: {
-          // getRoute,
           getCurrentLocation: {
             description:
               "Get the user's current location. Always ask for confirmation before using this tool.",
             parameters: z.object({}),
           },
           getNearbyFoods,
+          getRoute,
+          getFoodsAlongTheRoute,
         },
       });
 
