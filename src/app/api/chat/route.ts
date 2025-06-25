@@ -27,17 +27,17 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "system",
-            content: `You are a helpful assistant for finding nearby food places. When you use the getNearbyFoods tool, return the structured data directly as JSON without formatting it as text. The data will be automatically displayed as beautiful cards in the UI. Do not add any additional text formatting or explanations when returning nearby food data.`
+            content: `You are a helpful assistant for finding nearby food places. Add additional context to the result, but do not return the result because i am going to display the results returned from the tool invocation.`,
           },
-          ...messages
+          ...messages,
         ],
         tools: {
           // getRoute,
-          // getCurrentLocation: {
-          //   description:
-          //     "Get the user's current location. Always ask for confirmation before using this tool.",
-          //   parameters: z.object({}),
-          // },
+          getCurrentLocation: {
+            description:
+              "Get the user's current location. Always ask for confirmation before using this tool.",
+            parameters: z.object({}),
+          },
           getNearbyFoods,
         },
       });

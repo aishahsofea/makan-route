@@ -27,7 +27,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "next.config.ts"
+    "next.config.ts",
+    "src/utils/parseAIText.tss"
   ],
   "exclude": ["node_modules"]
 }

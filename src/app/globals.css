@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: 0 0% 0%;
+  --background: rgb(255, 250, 250);
   --foreground: rgb(14 25 34);
   --card: 0 0% 5%;
   --card-foreground: rgb(14 25 34);
@@ -42,6 +42,17 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-clamp: 2;
+  }
+
+  .scrollbar-hide {
+    /* Firefox */
+    scrollbar-width: none;
+    /* Safari and Chrome */
+    -ms-overflow-style: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 
