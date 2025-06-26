@@ -16,19 +16,24 @@ const RESTAURANT_CATEGORY = "4d4b7105d754a06374d81259";
 
 export const getFoodsAlongTheRoute = tool({
   description:
-    "Given a driving route, find food options along the way. Return the results as structured data that can be displayed as cards.",
+    "Given a route where you can deduce from starting point and destination using getRoute tool, find food options along the way. Return the results as structured data that can be displayed as cards.",
   parameters: getFoodsAlongTheRouteParameters,
   execute: async ({ coords }) => {
     const { sw, ne } = getBoundingBox(coords);
     const REDIS_BOUNDING_BOX_KEY = `boundingBox:${ne}:${sw}`;
 
-    const url = `${process.env.FOURSQUARE_API_URL}/places/search?categories=${RESTAURANT_CATEGORY}&ne=${ne}&sw=${sw}&limit=50`;
+    const url = `${
+      process.env.FOURSQUARE_API_URL
+    }/places/search?fsq_category_ids=${RESTAURANT_CATEGORY}&ne=${encodeURIComponent(
+      String(ne)
+    )}&sw=${encodeURIComponent(String(sw))}&limit=50`;
 
     const options = {
       method: "GET",
       headers: {
         accept: "application/json",
-        Authorization: process.env.FOURSQUARE_API_KEY || "",
+        "X-Places-Api-Version": "2025-06-17",
+        authorization: `Bearer ${process.env.FOURSQUARE_API_KEY}`,
       },
     };
 

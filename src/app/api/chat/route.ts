@@ -28,14 +28,14 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "system",
-            content: `You are a helpful assistant for finding nearby food places. Add additional context to the result, but do not return the result because i am going to display the results returned from the tool invocation.`,
+            content: `You are a helpful assistant for finding nearby food places. Add additional context to the result.`,
           },
           ...messages,
         ],
         tools: {
           getCurrentLocation: {
             description:
-              "Get the user's current location. Always ask for confirmation before using this tool.",
+              "Get the user's current location. Always ask for confirmation before using this tool. Do not use this tool if they have already provided a starting point and destination.",
             parameters: z.object({}),
           },
           getNearbyFoods,

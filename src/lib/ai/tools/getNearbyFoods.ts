@@ -14,7 +14,8 @@ const options = {
   method: "GET",
   headers: {
     accept: "application/json",
-    Authorization: process.env.FOURSQUARE_API_KEY || "",
+    "X-Places-Api-Version": "2025-06-17",
+    authorization: `Bearer ${process.env.FOURSQUARE_API_KEY}`,
   },
 };
 
@@ -37,7 +38,7 @@ export const getNearbyFoods = tool({
     const response = await fetch(
       `${
         process.env.FOURSQUARE_API_URL
-      }/places/search?categories=${RESTAURANT_CATEGORY}&ll=${encodeURIComponent(
+      }/places/search?fsq_category_ids=${RESTAURANT_CATEGORY}&ll=${encodeURIComponent(
         ll
       )}`,
       options
