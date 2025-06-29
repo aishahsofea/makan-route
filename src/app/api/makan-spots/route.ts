@@ -29,7 +29,6 @@ export async function GET(req: NextRequest) {
     }
 
     const response = await fetch(url, options);
-    console.log({ response });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

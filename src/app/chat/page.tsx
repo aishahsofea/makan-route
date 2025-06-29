@@ -27,6 +27,8 @@ export default function ChatPage() {
     },
   });
 
+  console.log("Chat messages:", messages);
+
   const isStructuredContent = (content: string) => {
     try {
       const parsed = JSON.parse(content);
