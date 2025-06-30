@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { embed, embedMany, EmbeddingModel } from "ai";
+import { embed, embedMany } from "ai";
 
 export class EmbeddingsService {
   async generateEmbedding(text: string): Promise<number[]> {

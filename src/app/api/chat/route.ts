@@ -1,15 +1,63 @@
 import { getFoodsAlongTheRoute } from "@/lib/ai/tools/getFoodsAlongTheRoute";
 import { getNearbyFoods } from "@/lib/ai/tools/getNearbyFoods";
 import { getRoute } from "@/lib/ai/tools/getRoute";
+import { RAGService } from "@/lib/rag/retrieval";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { z } from "zod";
 
+const ragService = new RAGService();
+
 export async function POST(request: Request) {
   try {
     const { messages } = await request.json();
+    const lastMessage = messages.at(-1);
 
     console.log("Chat API called with messages:", messages);
+
+    // Step 1: Retrieve relevant resturant context using RAG
+    let relevantContext = "";
+    try {
+      const relevantRestaurants = await ragService.retrieveRelevantRestaurants(
+        lastMessage.content,
+        3
+      );
+
+      if (relevantRestaurants.length > 0) {
+        relevantContext = `
+        
+        Relevant restaurant information:
+        
+        ${relevantRestaurants
+          .map(
+            (restaurant, index) =>
+              `${index + 1}. **${
+                restaurant.restaurantName
+              }** (Score: ${restaurant.relevanceScore.toFixed(3)})
+            
+              ${restaurant.content}.
+            `
+          )
+          .join("\n\n")}
+        `;
+
+        console.log(
+          `RAG found ${relevantRestaurants.length} relevant restaurants.`
+        );
+      }
+    } catch (error) {
+      console.log(
+        `RAG retrieval failed. Continuing without context. Error: ${error}`
+      );
+    }
+
+    // Step 2: Create enhanced prompt with RAG context
+    const enhancedSystemPrompt = `You are a helpful assistant for finding places to eat, specifically in Kuala Lumpur, Malaysia. You help users find restaurants either based on their locations or their driving routes.
+    
+    ${relevantContext}
+    
+    Always be helpful, friendly, and provide specific, actionable recommendations.
+  `;
 
     // Validate that messages array is not empty
     if (!messages || messages.length === 0) {
@@ -28,7 +76,7 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "system",
-            content: `You are a helpful assistant for finding nearby food places. Add additional context to the result.`,
+            content: enhancedSystemPrompt,
           },
           ...messages,
         ],

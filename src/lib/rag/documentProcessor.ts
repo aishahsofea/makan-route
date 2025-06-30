@@ -1,5 +1,4 @@
 import { openai } from "@ai-sdk/openai";
-import { RestaurantMetadata } from "./vectorStore";
 import { generateText } from "ai";
 import { ChunkingStrategy } from "./chunkingStrategy";
 import { z } from "zod";
@@ -55,8 +54,8 @@ export class DocumentProcessor {
     - Price: ${restaurant.price || "Price not specified"}
     - Rating: ${restaurant.rating || "No rating"}
     - Popularity: ${restaurant.popularity || "No popularity score"}
-    - Tastes: ${restaurant.tastes.join(", ") || "No tastes available"}
-    - Attributes: ${Object.entries(restaurant.attributes)}
+    - Tastes: ${restaurant.tastes?.join(", ") || "No tastes available"}
+    - Attributes: ${Object.entries(restaurant.attributes ?? {})}
     
     Write a detailed 4-6 sentence description that covers:
     1. What type of restaurant it is and what they serve

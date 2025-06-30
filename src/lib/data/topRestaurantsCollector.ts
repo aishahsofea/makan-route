@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { redis } from "../redis";
 import { RestaurantSchema } from "../rag/schema";
+import { RestaurantFetcher } from "./restaurantFetcher";
 
 const KL_AREAS = [
   { name: "Bukit Bintang", lat: 3.1478, lng: 101.7072, radius: 2000 },
@@ -15,11 +16,21 @@ const KL_AREAS = [
 const ResultsSchema = z.array(RestaurantSchema);
 
 export class TopRestaurantsCollector {
+  private restaurantFetcher: RestaurantFetcher;
+
+  constructor() {
+    this.restaurantFetcher = new RestaurantFetcher();
+  }
+
   private async getTopRestaurantsInArea(
     areaName: string
   ): Promise<z.infer<typeof ResultsSchema>> {
     const area = KL_AREAS.find((area) => area.name === areaName);
-    const coordinates = `${area?.lat},${area?.lng}`;
+
+    if (!area) {
+      console.error(`Area ${areaName} not found`);
+      return [];
+    }
 
     const REDIS_TOP_RESTAURANTS_KEY = `topRestaurants:${areaName}`;
     const cachedTopRestaurants = await redis.get(REDIS_TOP_RESTAURANTS_KEY);
@@ -30,17 +41,13 @@ export class TopRestaurantsCollector {
     }
 
     try {
-      const url = `/api/restaurants-in-area?ll=${encodeURIComponent(
-        coordinates
-      )}&radius=${area?.radius}`;
-      const response = await fetch(url);
-
-      const results = ResultsSchema.parse(await response.json());
-
-      const topRestaurants = results.filter(
-        (restaurant: any) =>
-          restaurant.rating >= 7 && restaurant.popularity >= 0.7
-      );
+      const topRestaurants =
+        await this.restaurantFetcher.getTopRestaurantsInArea(
+          areaName,
+          area.lat,
+          area.lng,
+          area.radius
+        );
 
       await redis.setex(
         REDIS_TOP_RESTAURANTS_KEY,
@@ -48,9 +55,6 @@ export class TopRestaurantsCollector {
         JSON.stringify(topRestaurants)
       );
 
-      console.log(
-        `Found ${topRestaurants.length} top restaurants in ${areaName}`
-      );
       return topRestaurants;
     } catch (error) {
       console.error(`Error fetching top restaurants in ${areaName}:`, error);
