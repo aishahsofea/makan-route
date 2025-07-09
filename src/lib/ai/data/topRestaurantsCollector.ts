@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { redis } from "../redis";
 import { RestaurantSchema } from "../rag/schema";
 import { RestaurantFetcher } from "./restaurantFetcher";
+import { redis } from "@/lib/redis";
 
 const KL_AREAS = [
   { name: "Bukit Bintang", lat: 3.1478, lng: 101.7072, radius: 2000 },

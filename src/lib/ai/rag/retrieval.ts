@@ -1,4 +1,3 @@
-import { Index } from "@upstash/vector";
 import { DocumentProcessor } from "./documentProcessor";
 import { EmbeddingsService } from "./embeddings";
 import { RestaurantMetadata, VectorStore } from "./vectorStore";
@@ -9,7 +8,7 @@ export type RestaurantDocument = Awaited<
 >[number];
 
 export type VectorQueryResult = Awaited<
-  ReturnType<Index<RestaurantMetadata>["query"]>
+  ReturnType<VectorStore["query"]>
 >[number];
 
 export class RAGService {

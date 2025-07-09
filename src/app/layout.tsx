@@ -33,7 +33,7 @@ export default function RootLayout({
     <html lang="en" className={`${caveatBrush.className}`}>
       <body>
         <Providers>
-          <main className="min-h-screen flex flex-col items-center p-4">
+          <main className="min-h-screen flex flex-col items-center">
             {children}
           </main>
         </Providers>

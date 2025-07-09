@@ -1,4 +1,4 @@
-import { RAGService } from "@/lib/rag/retrieval";
+import { RAGService } from "@/lib/ai/rag/retrieval";
 
 export const testRAGSystem = async (ragService: RAGService) => {
   const testQueries = [

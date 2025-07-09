@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:ts": "tsc --noEmit",
     "setup-rag": "tsx src/scripts/setupRAG.ts"
   },
   "dependencies": {

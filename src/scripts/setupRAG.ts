@@ -1,7 +1,7 @@
 import { config } from "dotenv";
-import { TopRestaurantsCollector } from "@/lib/data/topRestaurantsCollector";
-import { RAGService } from "@/lib/rag/retrieval";
 import { testRAGSystem } from "./testRAGSystem";
+import { RAGService } from "@/lib/ai/rag/retrieval";
+import { TopRestaurantsCollector } from "@/lib/ai/data/topRestaurantsCollector";
 
 config();
 

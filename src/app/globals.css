@@ -68,3 +68,11 @@ body {
   background-color: rgb(255, 250, 250);
   color: rgb(14 25 34);
 }
+
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
