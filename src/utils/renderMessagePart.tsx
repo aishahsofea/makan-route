@@ -10,6 +10,8 @@ import {
   ToolInvocation,
 } from "@ai-sdk/ui-utils";
 import { Spinner } from "@heroui/react";
+import { MessageContent } from "@/types/message";
+import { ImageDisplay } from "@/components/ImageDisplay";
 
 type MessagePart =
   | TextUIPart
@@ -33,6 +35,27 @@ export const renderMessagePart = (part: MessagePart, index: number) => {
     default:
       return null;
   }
+};
+
+export const renderMessageWithImages = (message: any, index: number) => {
+  const content: MessageContent =
+    typeof message.content === "string"
+      ? { text: message.content, images: [] }
+      : message.content;
+
+  return (
+    <div key={index} className="space-y-2">
+      {content.images && content.images.length > 0 && (
+        <ImageDisplay images={content.images} />
+      )}
+
+      {content.text && (
+        <div className="whitespace-pre-wrap break-words">
+          {parseText(content.text)}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const renderToolInvocation = (

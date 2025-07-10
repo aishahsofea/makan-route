@@ -42,3 +42,6 @@ next-env.d.ts
 
 # chromadb
 /chroma-data
+
+# public
+/public/uploads/

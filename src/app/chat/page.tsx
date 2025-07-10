@@ -4,7 +4,10 @@ import { ConversationSidebar } from "@/components/ConversationSidebar";
 import { MultimodalInput } from "@/components/MultimodalInput";
 import { useConversation } from "@/hooks/useConversation";
 import { getPlaceName } from "@/utils/getPlaceName";
-import { renderMessagePart } from "@/utils/renderMessagePart";
+import {
+  renderMessagePart,
+  renderMessageWithImages,
+} from "@/utils/renderMessagePart";
 import { Message, useChat } from "@ai-sdk/react";
 import { useEffect, useState } from "react";
 import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -124,7 +127,7 @@ export default function ChatPage() {
                 />
               </div>
               <button
-                className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-white border border-gray-200 rounded-full shadow p-1 z-40 hover:bg-gray-100"
+                className="absolute top-1/2 -right-3 transform -translate-y-1/2 bg-white border border-gray-200 rounded-full shadow p-1 z-40 hover:bg-gray-100 cursor-pointer"
                 onClick={() => setSidebarCollapsed(true)}
                 title="Collapse sidebar"
               >
@@ -133,7 +136,7 @@ export default function ChatPage() {
             </>
           ) : (
             <button
-              className="absolute top-1/2 left-1 transform -translate-y-1/2 bg-white border border-gray-200 rounded-full shadow p-1 z-40 hover:bg-gray-100"
+              className="absolute top-1/2 left-1 transform -translate-y-1/2 bg-white border border-gray-200 rounded-full shadow p-1 z-40 hover:bg-gray-100 cursor-pointer"
               onClick={() => setSidebarCollapsed(false)}
               title="Expand sidebar"
             >
@@ -220,7 +223,7 @@ export default function ChatPage() {
                     }`}
                   >
                     {isUserMessage ? (
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      renderMessageWithImages(message, index)
                     ) : (
                       <>
                         {message.parts.map((part, index) =>

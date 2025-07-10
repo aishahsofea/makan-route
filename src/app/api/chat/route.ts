@@ -6,12 +6,35 @@ import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { z } from "zod";
 import { conversationService } from "@/lib/ai/conversation";
+import { MessageContent } from "@/types/message";
 
 const ragService = new RAGService();
 
 export async function POST(request: Request) {
   try {
     const { messages, conversationId, userId } = await request.json();
+
+    const processedMessages = messages.map((msg: any) => {
+      if (typeof msg.content === "string") {
+        return {
+          ...msg,
+          content: msg.content,
+        };
+      } else {
+        const content = msg.content as MessageContent;
+        let text = content.text;
+
+        if (content.images && content.images.length > 0) {
+          text += `\n[User uploaded ${content.images.length} image(s)]`;
+        }
+
+        return {
+          ...msg,
+          content: text,
+        };
+      }
+    });
+
     const lastMessage = messages.at(-1);
 
     console.log(
@@ -111,7 +134,7 @@ export async function POST(request: Request) {
             role: "system",
             content: enhancedSystemPrompt,
           },
-          ...messages,
+          ...processedMessages,
         ],
         tools: {
           getCurrentLocation: {
