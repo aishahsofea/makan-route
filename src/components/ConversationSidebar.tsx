@@ -127,11 +127,13 @@ export const ConversationSidebar = (props: ConversationSidebarProps) => {
                     </p>
                     {conversation.messages.length > 0 && (
                       <p className="text-xs text-gray-600 mt-1 truncate">
-                        {conversation.messages[
-                          conversation.messages.length - 1
-                        ]?.content.slice(0, 50)}
-                        {conversation.messages[conversation.messages.length - 1]
-                          ?.content.length > 50 && "..."}
+                        {(() => {
+                          const lastMessage = conversation.messages[conversation.messages.length - 1];
+                          const content = typeof lastMessage?.content === "string" 
+                            ? lastMessage.content 
+                            : lastMessage?.content.text;
+                          return content?.slice(0, 50) + (content?.length > 50 ? "..." : "");
+                        })()}
                       </p>
                     )}
                   </div>

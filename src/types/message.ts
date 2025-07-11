@@ -2,6 +2,7 @@ export type ImageAttachment = {
   id: string;
   filename: string;
   originalName: string;
+  mimeType: string;
   size: number;
   url: string;
   width?: number;

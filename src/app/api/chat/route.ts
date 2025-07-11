@@ -7,6 +7,10 @@ import { streamText } from "ai";
 import { z } from "zod";
 import { conversationService } from "@/lib/ai/conversation";
 import { MessageContent } from "@/types/message";
+import {
+  processVisionWithRAG,
+  VisionRAGResult,
+} from "@/lib/ai/rag/visionIntegration";
 
 const ragService = new RAGService();
 
@@ -14,7 +18,19 @@ export async function POST(request: Request) {
   try {
     const { messages, conversationId, userId } = await request.json();
 
-    const processedMessages = messages.map((msg: any) => {
+    console.log(`📨 Received messages: ${JSON.stringify(messages, null, 2)}`);
+
+    const lastMessage = messages.at(-1);
+    const hasImages =
+      lastMessage?.content?.images && lastMessage.content.images.length > 0;
+
+    console.log(`🖼️ Has images: ${hasImages}`);
+    console.log(`📩 Last message: ${lastMessage.content}`);
+
+    let processedMessages = messages;
+    let relevantContext = "";
+
+    const processTextOnly = (msg: any) => {
       if (typeof msg.content === "string") {
         return {
           ...msg,
@@ -25,7 +41,7 @@ export async function POST(request: Request) {
         let text = content.text;
 
         if (content.images && content.images.length > 0) {
-          text += `\n[User uploaded ${content.images.length} image(s)]`;
+          text += `\n[User uploaded ${content.images.length} image(s) - vision analysis unavailable]`;
         }
 
         return {
@@ -33,15 +49,120 @@ export async function POST(request: Request) {
           content: text,
         };
       }
-    });
+    };
 
-    const lastMessage = messages.at(-1);
+    const createVisionContext = (vision: VisionRAGResult) => {
+      const { visionAnalysis, ragContext } = vision;
+      return `
+        VISION ANALYSIS:
+        - Food items: ${visionAnalysis.foodItems.join(", ")}
+        - Cuisine: ${visionAnalysis.cuisine}
+        - Description: ${visionAnalysis.description}
+        - AI recommendations: ${visionAnalysis.recommendations.join(", ")}
 
-    console.log(
-      `Chat API called with messages: ${JSON.stringify(
-        messages
-      )}. Conversation ID: ${conversationId}`
-    );
+        RELEVANT RESTAURANTS:
+        ${ragContext}
+      `;
+    };
+
+    const createRelevantRestaurantContext = (
+      restaurants: Awaited<
+        ReturnType<RAGService["retrieveRelevantRestaurants"]>
+      >
+    ) => {
+      return `Relevant restaurant information:
+      ${restaurants
+        .map(
+          (restaurant, index) => `
+        ${index + 1}. **${
+            restaurant.restaurantName
+          }** (Score: ${restaurant.relevanceScore.toFixed(3)})
+        ${restaurant.content}
+      `
+        )
+        .join("\n\n")}`;
+    };
+
+    if (hasImages) {
+      try {
+        // Process images with vision API and RAG
+        console.log(
+          `Processing ${lastMessage.content.images.length} images with vision API`
+        );
+        const visionResult = await processVisionWithRAG(
+          lastMessage.content.images,
+          lastMessage.content.text
+        );
+
+        relevantContext = createVisionContext(visionResult);
+
+        processedMessages = messages.map((msg: any) => {
+          if (msg === lastMessage) {
+            return {
+              ...msg,
+              content: `${
+                msg.content.text
+              }\n\n[Vision analysis: I can see ${visionResult.visionAnalysis.foodItems.join(
+                ", "
+              )} in the image(s) you provided]`,
+            };
+          }
+
+          return {
+            ...msg,
+            content:
+              typeof msg.content === "string" ? msg.content : msg.content.text,
+          };
+        });
+
+        console.log(
+          `Vision processing completed. Found ${visionResult.visionAnalysis.foodItems.join(
+            ", "
+          )}`
+        );
+      } catch (error) {
+        console.error("Error processing images: ", error);
+
+        // Fallback to text-only processing
+        processedMessages = messages.map((msg: any) => processTextOnly(msg));
+
+        // Try regular RAG without vision
+        try {
+          const relevantRestaurants =
+            await ragService.retrieveRelevantRestaurants(
+              lastMessage.content.text,
+              3
+            );
+
+          if (relevantRestaurants.length > 0) {
+            relevantContext =
+              createRelevantRestaurantContext(relevantRestaurants);
+          }
+        } catch (error) {
+          console.error("❌ RAG retrieval also failed:: ", error);
+        }
+      }
+    } else {
+      // Process text messages only
+      processedMessages = messages.map((msg: any) => ({
+        ...msg,
+        content:
+          typeof msg.content === "string" ? msg.content : msg.content.text,
+      }));
+
+      // Try regular RAG retrieval
+      try {
+        const relevantRestaurants =
+          await ragService.retrieveRelevantRestaurants(lastMessage.content, 3);
+
+        if (relevantRestaurants.length > 0) {
+          relevantContext =
+            createRelevantRestaurantContext(relevantRestaurants);
+        }
+      } catch (error) {
+        console.error("❌ RAG retrieval failed: ", error);
+      }
+    }
 
     // Get conversation history for context
     let conversationHistory: any[] = [];
@@ -55,48 +176,9 @@ export async function POST(request: Request) {
           role: msg.role,
           content: msg.content,
         }));
-        console.log(
-          `Retrieved ${conversationHistory.length} messages from conversation history`
-        );
       } catch (error) {
-        console.log(`Failed to retrieve conversation history: ${error}`);
+        console.log(`❌ Failed to retrieve conversation history: ${error}`);
       }
-    }
-
-    // Retrieve relevant resturant context using RAG
-    let relevantContext = "";
-    try {
-      const relevantRestaurants = await ragService.retrieveRelevantRestaurants(
-        lastMessage.content,
-        3
-      );
-
-      if (relevantRestaurants.length > 0) {
-        relevantContext = `
-        
-        Relevant restaurant information:
-        
-        ${relevantRestaurants
-          .map(
-            (restaurant, index) =>
-              `${index + 1}. **${
-                restaurant.restaurantName
-              }** (Score: ${restaurant.relevanceScore.toFixed(3)})
-            
-              ${restaurant.content}.
-            `
-          )
-          .join("\n\n")}
-        `;
-
-        console.log(
-          `RAG found ${relevantRestaurants.length} relevant restaurants.`
-        );
-      }
-    } catch (error) {
-      console.log(
-        `RAG retrieval failed. Continuing without context. Error: ${error}`
-      );
     }
 
     // Create enhanced prompt with RAG context
@@ -153,7 +235,7 @@ export async function POST(request: Request) {
           }
 
           try {
-            // Store user message
+            // Store user message with original content structure
             await conversationService.addMessage(conversationId, {
               role: "user",
               content: lastMessage.content,
@@ -165,18 +247,18 @@ export async function POST(request: Request) {
               content: completion.text,
             });
           } catch (error) {
-            console.error(`Failed to store conversation messages: ${error}`);
+            console.error(`❌ Failed to store conversation messages: ${error}`);
           }
         },
       });
 
       return result.toDataStreamResponse();
     } catch (streamError) {
-      console.error("Error in streamText:", streamError);
+      console.error("❌ Error in streamText:", streamError);
       throw streamError;
     }
   } catch (error) {
-    console.error("Error in chat API:", error);
+    console.error("❌ Error in chat API:", error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : "Unknown error",

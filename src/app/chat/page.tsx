@@ -9,13 +9,16 @@ import {
   renderMessageWithImages,
 } from "@/utils/renderMessagePart";
 import { Message, useChat } from "@ai-sdk/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<any | null>(null);
+  const [messageImages, setMessageImages] = useState<Map<string, any[]>>(
+    new Map()
+  );
   const {
     currentConversationId,
     userId,
@@ -23,39 +26,32 @@ export default function ChatPage() {
     loadConversationHistory,
     selectConversation,
   } = useConversation();
-  const {
-    messages,
-    input,
-    status,
-    error,
-    setInput,
-    handleSubmit,
-    setMessages,
-  } = useChat({
-    id: currentConversationId, // <-- add this line to reset chat state per conversation
-    maxSteps: 5,
-    body: {
-      conversationId: currentConversationId,
-      userId,
-    },
-    onToolCall: async ({ toolCall }) => {
-      if (toolCall.toolName === "getCurrentLocation") {
-        return new Promise((resolve) => {
-          navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-              const placeName = await getPlaceName(
-                pos.coords.latitude,
-                pos.coords.longitude
-              );
+  const { messages, input, status, setInput, handleSubmit, setMessages } =
+    useChat({
+      id: currentConversationId, // <-- add this line to reset chat state per conversation
+      maxSteps: 5,
+      body: {
+        conversationId: currentConversationId,
+        userId,
+      },
+      onToolCall: async ({ toolCall }) => {
+        if (toolCall.toolName === "getCurrentLocation") {
+          return new Promise((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+              async (pos) => {
+                const placeName = await getPlaceName(
+                  pos.coords.latitude,
+                  pos.coords.longitude
+                );
 
-              resolve(placeName);
-            },
-            (err) => resolve({ error: err.message })
-          );
-        });
-      }
-    },
-  });
+                resolve(placeName);
+              },
+              (err) => resolve({ error: err.message })
+            );
+          });
+        }
+      },
+    });
 
   // Load conversation history when conversation changes
   useEffect(() => {
@@ -70,13 +66,150 @@ export default function ChatPage() {
     }
   }, [currentConversationId, loadConversationHistory, setMessages]);
 
+  // Wrap handleSubmit to ensure a conversation exists before sending a message
+  const handleUserSubmit = async (e: FormEvent, images?: any[]) => {
+    if (!currentConversationId) {
+      setPendingMessage([e, images]);
+      await createNewConversation();
+    } else {
+      e.preventDefault();
+
+      if (!input.trim() && (!images || images.length === 0)) {
+        return; // Don't submit empty messages
+      }
+
+      const messageContent = {
+        text: input.trim(),
+        images: images || [],
+      };
+
+      const userMessage = {
+        role: "user" as const,
+        content: messageContent,
+      };
+
+      // Create user message with unique ID
+      const userMessageId = `user_${Date.now()}`;
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: userMessageId,
+          role: "user" as const,
+          content: input.trim(),
+          parts: [{ type: "text", text: input.trim() }],
+        } as Message,
+      ]);
+
+      // Store images for display if they exist
+      if (images && images.length > 0) {
+        setMessageImages((prev) => new Map(prev).set(userMessageId, images));
+      }
+
+      setInput("");
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: [userMessage],
+            conversationId: currentConversationId,
+            userId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get response");
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("No response body");
+
+        let assistantMessage = "";
+        const assistantMessageId = `assistant_${Date.now()}`;
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: assistantMessageId,
+            role: "assistant" as const,
+            content: "",
+            parts: [],
+          } as Message,
+        ]);
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = new TextDecoder().decode(value);
+          const lines = chunk.split("\n");
+
+          for (const line of lines) {
+            if (line.startsWith("0:")) {
+              // Extract the content after "0:"
+              const data = line.slice(2);
+              if (data && data.trim()) {
+                try {
+                  // Try to parse as JSON first
+                  const parsed = JSON.parse(data);
+                  // If it's a simple string, use it directly
+                  if (typeof parsed === 'string') {
+                    assistantMessage += parsed;
+                  }
+                } catch {
+                  // If not JSON, treat as plain text
+                  assistantMessage += data;
+                }
+              }
+            }
+          }
+
+          // Update the message in real-time
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? {
+                    ...msg,
+                    content: assistantMessage,
+                    parts: [{ type: "text", text: assistantMessage }],
+                  }
+                : msg
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error sending message: ", error);
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `error_${Date.now()}`,
+            role: "assistant" as const,
+            content: "Sorry, I encountered an error. Please try again.",
+            parts: [
+              {
+                type: "text",
+                text: "Sorry, I encountered an error. Please try again.",
+              },
+            ],
+          } as Message,
+        ]);
+      }
+    }
+  };
+
   // When currentConversationId is set and there is a pending message, send it
   useEffect(() => {
     if (currentConversationId && pendingMessage) {
-      handleSubmit(...pendingMessage);
+      const [e, images] = pendingMessage;
+      handleUserSubmit(e, images);
       setPendingMessage(null);
     }
-  }, [currentConversationId, pendingMessage, handleSubmit]);
+  }, [currentConversationId, pendingMessage, handleUserSubmit]);
 
   const isStructuredContent = (content: string) => {
     try {
@@ -95,16 +228,6 @@ export default function ChatPage() {
   const handleConversationSelect = async (conversationId: string) => {
     selectConversation(conversationId);
     setSidebarOpen(false);
-  };
-
-  // Wrap handleSubmit to ensure a conversation exists before sending a message
-  const handleUserSubmit = async (...args: any[]) => {
-    if (!currentConversationId) {
-      setPendingMessage(args);
-      await createNewConversation();
-    } else {
-      handleSubmit(...args);
-    }
   };
 
   return (
@@ -203,7 +326,6 @@ export default function ChatPage() {
           <div className="space-y-4 px-4">
             {messages.map((message, index) => {
               const isUserMessage = message.role === "user";
-              const isAiMessage = message.role === "assistant";
               const isStructured = isStructuredContent(message.content);
 
               return (
@@ -223,7 +345,18 @@ export default function ChatPage() {
                     }`}
                   >
                     {isUserMessage ? (
-                      renderMessageWithImages(message, index)
+                      renderMessageWithImages(
+                        {
+                          ...message,
+                          content: messageImages.has(message.id)
+                            ? {
+                                text: message.content as string,
+                                images: messageImages.get(message.id) || [],
+                              }
+                            : message.content,
+                        },
+                        index
+                      )
                     ) : (
                       <>
                         {message.parts.map((part, index) =>

@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "lint:ts": "tsc --noEmit",
-    "setup-rag": "tsx src/scripts/setupRAG.ts"
+    "setup-rag": "tsx src/scripts/setupRAG.ts",
+    "chroma:run": "docker run -p 8000:8000 chromadb/chroma"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",

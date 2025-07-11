@@ -43,7 +43,7 @@ export const MultimodalInput = ({
 
       try {
         const formData = new FormData();
-        formData.append("image", file);
+        formData.append("image_url", file);
 
         const response = await fetch("/api/upload", {
           method: "POST",

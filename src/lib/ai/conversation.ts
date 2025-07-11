@@ -1,9 +1,10 @@
 import { title } from "process";
 import { redis } from "../redis";
+import { MessageContent } from "@/types/message";
 
 export type ConversationMessage = {
   role: "user" | "assistant" | "system";
-  content: string;
+  content: string | MessageContent;
   timestamp: number;
 };
 
@@ -83,8 +84,11 @@ export class ConversationService {
       message.role === "user" &&
       conversation.messages.filter((m) => m.role === "user").length === 1
     ) {
-      conversation.title = `${message.content.slice(0, 50)}${
-        message.content.length > 50 ? "..." : ""
+      const contentText = typeof message.content === "string" 
+        ? message.content 
+        : message.content.text;
+      conversation.title = `${contentText.slice(0, 50)}${
+        contentText.length > 50 ? "..." : ""
       }`;
     }
 

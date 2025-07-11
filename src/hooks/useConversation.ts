@@ -61,7 +61,7 @@ export const useConversation = () => {
             parts: [
               {
                 type: "text",
-                text: message.content,
+                text: typeof message.content === "string" ? message.content : message.content.text,
               },
             ],
           }));

@@ -11,15 +11,21 @@ export const ImageDisplay = ({ images, className = "" }: ImageDisplayProps) => {
 
   if (!images || images.length === 0) return null;
 
+  const getImageGridClasses = (imageCount: number) => {
+    if (imageCount === 1) return "grid-cols-1 max-w-md";
+    if (imageCount === 2) return "grid-cols-2 max-w-2xl";
+    return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 max-w-4xl";
+  };
+
   return (
     <>
-      <div className={`flex flex-wrap gap-2 mt-2 ${className}`}>
+      <div className={`grid gap-2 mt-2 ${getImageGridClasses(images.length)} ${className}`}>
         {images.map((image) => (
           <div key={image.id} className="relative">
             <img
               src={image.url}
               alt={image.originalName}
-              className="max-w-xs max-h-48 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+              className="w-full h-32 sm:h-40 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
               onClick={() => setExpandedImage(image.url)}
             />
           </div>
@@ -31,11 +37,19 @@ export const ImageDisplay = ({ images, className = "" }: ImageDisplayProps) => {
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
           onClick={() => setExpandedImage(null)}
         >
-          <img
-            src={expandedImage}
-            alt="Expanded view"
-            className="max-w-full max-h-full object-contain"
-          />
+          <div className="relative">
+            <img
+              src={expandedImage}
+              alt="Expanded view"
+              className="max-w-full max-h-full object-contain"
+            />
+            <button
+              onClick={() => setExpandedImage(null)}
+              className="absolute top-2 right-2 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 rounded-full w-8 h-8 flex items-center justify-center transition-all"
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
     </>
