@@ -4,6 +4,7 @@ import { ConversationSidebar } from "@/components/ConversationSidebar";
 import { MultimodalInput } from "@/components/MultimodalInput";
 import { useConversation } from "@/hooks/useConversation";
 import { getPlaceName } from "@/utils/getPlaceName";
+import { parseStreamResponse } from "@/utils/parseStreamResponse";
 import {
   renderMessagePart,
   renderMessageWithImages,
@@ -59,12 +60,10 @@ export default function ChatPage() {
       loadConversationHistory(currentConversationId).then((history) => {
         if (history && history.length > 0) {
           setMessages(history as Message[]);
-        } else {
-          setMessages([]);
         }
       });
     }
-  }, [currentConversationId, loadConversationHistory, setMessages]);
+  }, [currentConversationId]);
 
   // Wrap handleSubmit to ensure a conversation exists before sending a message
   const handleUserSubmit = async (e: FormEvent, images?: any[]) => {
@@ -90,7 +89,7 @@ export default function ChatPage() {
 
       // Create user message with unique ID
       const userMessageId = `user_${Date.now()}`;
-      
+
       setMessages((prev) => [
         ...prev,
         {
@@ -145,28 +144,8 @@ export default function ChatPage() {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = new TextDecoder().decode(value);
-          const lines = chunk.split("\n");
-
-          for (const line of lines) {
-            if (line.startsWith("0:")) {
-              // Extract the content after "0:"
-              const data = line.slice(2);
-              if (data && data.trim()) {
-                try {
-                  // Try to parse as JSON first
-                  const parsed = JSON.parse(data);
-                  // If it's a simple string, use it directly
-                  if (typeof parsed === 'string') {
-                    assistantMessage += parsed;
-                  }
-                } catch {
-                  // If not JSON, treat as plain text
-                  assistantMessage += data;
-                }
-              }
-            }
-          }
+          const parsedContent = parseStreamResponse(value);
+          assistantMessage += parsedContent;
 
           // Update the message in real-time
           setMessages((prev) =>
@@ -209,7 +188,7 @@ export default function ChatPage() {
       handleUserSubmit(e, images);
       setPendingMessage(null);
     }
-  }, [currentConversationId, pendingMessage, handleUserSubmit]);
+  }, [currentConversationId, pendingMessage]);
 
   const isStructuredContent = (content: string) => {
     try {

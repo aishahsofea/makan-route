@@ -5,7 +5,7 @@ import { Button, Textarea } from "@heroui/react";
 import { UseChatHelpers } from "@ai-sdk/react";
 import { ImageAttachment } from "@/types/message";
 import { ImageIcon, X, Send } from "lucide-react";
-import { validateImageFile } from "@/lib/file-utils";
+import { validateImageFile } from "@/utils/file";
 
 type MultimodalInputProps = {
   input: UseChatHelpers["input"];

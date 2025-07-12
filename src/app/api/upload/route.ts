@@ -1,4 +1,4 @@
-import { generateUniqueFilename, validateImageFile } from "@/lib/file-utils";
+import { generateUniqueFilename, validateImageFile } from "@/utils/file";
 import { existsSync } from "fs";
 import {
   mkdir as mkdirPromise,

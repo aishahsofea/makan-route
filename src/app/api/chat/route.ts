@@ -153,7 +153,10 @@ export async function POST(request: Request) {
       // Try regular RAG retrieval
       try {
         const relevantRestaurants =
-          await ragService.retrieveRelevantRestaurants(lastMessage.content, 3);
+          await ragService.retrieveRelevantRestaurants(
+            lastMessage.content.text,
+            3
+          );
 
         if (relevantRestaurants.length > 0) {
           relevantContext =
@@ -228,6 +231,7 @@ export async function POST(request: Request) {
           getRoute,
           getFoodsAlongTheRoute,
         },
+        maxSteps: 5,
         onFinish: async (completion) => {
           if (!conversationId || !userId) {
             console.error("Conversation ID or User ID is missing.");

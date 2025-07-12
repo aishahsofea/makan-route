@@ -1,4 +1,4 @@
-import { analyzeFoodImage, FoodAnalysisResult } from "@/lib/vision-utils";
+import { analyzeFoodImage, FoodAnalysisResult } from "@/utils/vision";
 import { ImageAttachment } from "@/types/message";
 import { RAGService } from "./retrieval";
 import { generateText } from "ai";

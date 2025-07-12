@@ -19,6 +19,12 @@ cp env.example .env
 3. For Redis, we are using Upstash dashboard. You can get your Redis URL and token by signing up for free at https://upstash.com/
 4. Replace `UPSTASH_REDIS_REST_TOKEN` and `UPSTASH_REDIS_REST_URL` in the `.env` file with yours, and make sure to omit the `https://` part of the URL.
 
+Install the dependencies:
+
+```bash
+yarn
+```
+
 Run the development server:
 
 ```bash
