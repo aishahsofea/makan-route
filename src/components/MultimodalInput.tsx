@@ -6,6 +6,8 @@ import { UseChatHelpers } from "@ai-sdk/react";
 import { ImageAttachment } from "@/types/message";
 import { ImageIcon, X, Send } from "lucide-react";
 import { validateImageFile } from "@/utils/file";
+import { VoiceRecordButton } from "./VoiceRecordButton";
+import { AudioVisualizer } from "./AudioVisualizer";
 
 type MultimodalInputProps = {
   input: UseChatHelpers["input"];
@@ -22,6 +24,10 @@ export const MultimodalInput = ({
 }: MultimodalInputProps) => {
   const [selectedImages, setSelectedImages] = useState<ImageAttachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingStream, setRecordingStream] = useState<MediaStream | null>(
+    null
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,6 +75,25 @@ export const MultimodalInput = ({
     }
   };
 
+  const handleVoiceTranscription = (text: string) => {
+    setInput((prev) => {
+      const newValue = prev.trim() ? `${prev} ${text}` : text;
+      return newValue;
+    });
+
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  const handleRecordingStateChange = (
+    recording: boolean,
+    stream?: MediaStream | null
+  ) => {
+    setIsRecording(recording);
+    setRecordingStream(stream || null);
+  };
+
   const removeImage = (imageId: string) => {
     setSelectedImages((prev) => prev.filter((img) => img.id !== imageId));
   };
@@ -104,6 +129,14 @@ export const MultimodalInput = ({
           ))}
         </div>
       )}
+      {isRecording && (
+        <div className="flex justify-center mb-2">
+          <AudioVisualizer
+            isRecording={isRecording}
+            stream={recordingStream || undefined}
+          />
+        </div>
+      )}
       <form onSubmit={onSubmit} className="flex gap-2">
         <div className="flex-1">
           <Textarea
@@ -123,28 +156,37 @@ export const MultimodalInput = ({
         </div>
 
         <div className="flex flex-col gap-2">
-          <input
-            ref={fileInputRef}
-            className="hidden"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFileSelect}
-          />
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              className="hidden"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileSelect}
+            />
 
-          <Button
-            type="button"
-            onPress={() => fileInputRef.current?.click()}
-            isDisabled={isUploading}
-            variant="flat"
-            isIconOnly
-            size="sm"
-          >
-            <ImageIcon size={16} />
-          </Button>
+            <Button
+              type="button"
+              onPress={() => fileInputRef.current?.click()}
+              isDisabled={isUploading}
+              variant="flat"
+              isIconOnly
+              size="sm"
+            >
+              <ImageIcon size={16} />
+            </Button>
+
+            <VoiceRecordButton
+              onTranscription={handleVoiceTranscription}
+              isDisabled={isDisabled || isUploading}
+              onRecordingStateChange={handleRecordingStateChange}
+            />
+          </div>
 
           <Button
             style={{ background: "var(--secondary)" }}
+            className="w-auto"
             variant="flat"
             isIconOnly
             size="sm"

@@ -1,4 +1,3 @@
-import { title } from "process";
 import { redis } from "../redis";
 import { MessageContent } from "@/types/message";
 
@@ -17,7 +16,7 @@ export type Conversation = {
 };
 
 export class ConversationService {
-  private readonly CONVESRSATION_PREFIX = "conversation:";
+  private readonly CONVERSATION_PREFIX = "conversation:";
   private readonly USER_CONVERSATIONS_PREFIX = "user_conversations:";
 
   async createConversation(
@@ -36,7 +35,7 @@ export class ConversationService {
     };
 
     await redis.setex(
-      `${this.CONVESRSATION_PREFIX}${conversationId}`,
+      `${this.CONVERSATION_PREFIX}${conversationId}`,
       30 * 24 * 60 * 60,
       JSON.stringify(conversation)
     );
@@ -52,7 +51,7 @@ export class ConversationService {
 
   async getConversation(conversationId?: string): Promise<Conversation | null> {
     const conversationData = await redis.get(
-      `${this.CONVESRSATION_PREFIX}${conversationId}`
+      `${this.CONVERSATION_PREFIX}${conversationId}`
     );
 
     if (!conversationData) {
@@ -84,16 +83,17 @@ export class ConversationService {
       message.role === "user" &&
       conversation.messages.filter((m) => m.role === "user").length === 1
     ) {
-      const contentText = typeof message.content === "string" 
-        ? message.content 
-        : message.content.text;
+      const contentText =
+        typeof message.content === "string"
+          ? message.content
+          : message.content.text;
       conversation.title = `${contentText.slice(0, 50)}${
         contentText.length > 50 ? "..." : ""
       }`;
     }
 
     await redis.setex(
-      `${this.CONVESRSATION_PREFIX}${conversationId}`,
+      `${this.CONVERSATION_PREFIX}${conversationId}`,
       30 * 24 * 60 * 60,
       JSON.stringify(conversation)
     );
@@ -130,7 +130,7 @@ export class ConversationService {
       `${this.USER_CONVERSATIONS_PREFIX}${userId}`,
       conversationId
     );
-    await redis.del(`${this.CONVESRSATION_PREFIX}${conversationId}`);
+    await redis.del(`${this.CONVERSATION_PREFIX}${conversationId}`);
   }
 
   async getConversationContext(
