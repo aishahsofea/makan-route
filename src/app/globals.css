@@ -12,7 +12,7 @@
   --popover-foreground: rgb(14 25 34);
   --primary: 170 80% 50%;
   --primary-foreground: rgb(14 25 34);
-  --secondary: rgb(254, 207, 8);
+  --secondary: 49 99% 51%;
   --secondary-foreground: rgb(14 25 34);
   --muted: 0 0% 15%;
   --muted-foreground: 0 0% 70%;
@@ -50,7 +50,7 @@
     /* Safari and Chrome */
     -ms-overflow-style: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -69,10 +69,12 @@ body {
   color: rgb(14 25 34);
 }
 
-html, body {
+html,
+body {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
 }
-html::-webkit-scrollbar, body::-webkit-scrollbar {
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }

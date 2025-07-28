@@ -11,7 +11,13 @@ import {
 } from "@/utils/renderMessagePart";
 import { Message, useChat } from "@ai-sdk/react";
 import { useEffect, useState, FormEvent } from "react";
-import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu, X, ChevronLeft, ChevronRight, Volume1Icon } from "lucide-react";
+import { VoicePlayButton } from "@/components/VoicePlayButton";
+import { useAutoPlay } from "@/hooks/useAutoPlay";
+import { useVoicePersonas } from "@/hooks/useVoicePersonas";
+import { UIMessage } from "ai";
+import { Button, Switch } from "@heroui/react";
+import { VoiceSettingsModal } from "@/components/VoiceSettingsModal";
 
 export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -20,6 +26,7 @@ export default function ChatPage() {
   const [messageImages, setMessageImages] = useState<Map<string, any[]>>(
     new Map()
   );
+  const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false);
   const {
     currentConversationId,
     userId,
@@ -53,6 +60,8 @@ export default function ChatPage() {
         }
       },
     });
+  const autoPlay = useAutoPlay();
+  const voicePersonas = useVoicePersonas();
 
   // Load conversation history when conversation changes
   useEffect(() => {
@@ -64,6 +73,24 @@ export default function ChatPage() {
       });
     }
   }, [currentConversationId]);
+
+  // Auto-play new assistant messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages.at(-1) as UIMessage;
+      if (lastMessage.role === "assistant") {
+        const persona = voicePersonas.getPersonaForMessage(lastMessage.content);
+        voicePersonas.setActivePersona(persona);
+
+        autoPlay.queueMessage(
+          lastMessage.content,
+          `${lastMessage.id}`,
+          lastMessage.role,
+          "normal"
+        );
+      }
+    }
+  }, [messages.length]);
 
   // Wrap handleSubmit to ensure a conversation exists before sending a message
   const handleUserSubmit = async (e: FormEvent, images?: any[]) => {
@@ -287,13 +314,35 @@ export default function ChatPage() {
             <h1 className="text-2xl font-semibold text-gray-900 text-center flex-1">
               What's for Food? 🍝🍡🥗🍕
             </h1>
-            <button
-              style={{ backgroundColor: "var(--secondary)" }}
-              className="ml-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium cursor-pointer hover:!bg-amber-400"
-              onClick={handleNewConversation}
-            >
-              New chat
-            </button>
+            <div className="flex items-center gap-2">
+              <Button
+                color="secondary"
+                size="sm"
+                className="ml-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium cursor-pointer hover:!bg-amber-400"
+                onPress={handleNewConversation}
+              >
+                New chat
+              </Button>
+              <Button
+                variant="light"
+                size="sm"
+                onPress={() => setIsVoiceSettingsOpen(true)}
+                startContent={<Volume1Icon className="h-4 w-4" />}
+              >
+                Voice Settings
+              </Button>
+              <Switch
+                name="auto-play"
+                color="secondary"
+                size="sm"
+                isSelected={autoPlay.settings.enabled}
+                onValueChange={(enabled) =>
+                  autoPlay.updateSettings({ enabled })
+                }
+              >
+                Auto-play
+              </Switch>
+            </div>
           </div>
         </div>
 
@@ -341,6 +390,14 @@ export default function ChatPage() {
                         {message.parts.map((part, index) =>
                           renderMessagePart(part, index)
                         )}
+                        {/* Voice controls - for assistant messages */}
+                        <div className="flex items-center justify-end opacity-60 hover:opacity-100 transition-opacity">
+                          <VoicePlayButton
+                            text={message.content}
+                            size="sm"
+                            variant="light"
+                          />
+                        </div>
                       </>
                     )}
                   </div>
@@ -364,6 +421,12 @@ export default function ChatPage() {
             />
           </div>
         </div>
+
+        {/* Voice settings modal */}
+        <VoiceSettingsModal
+          isOpen={isVoiceSettingsOpen}
+          onClose={() => setIsVoiceSettingsOpen(false)}
+        />
       </div>
     </div>
   );

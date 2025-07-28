@@ -185,9 +185,8 @@ export const MultimodalInput = ({
           </div>
 
           <Button
-            style={{ background: "var(--secondary)" }}
+            color="secondary"
             className="w-auto"
-            variant="flat"
             isIconOnly
             size="sm"
             type="submit"
