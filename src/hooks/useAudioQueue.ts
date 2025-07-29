@@ -1,13 +1,13 @@
 import { useCallback, useState } from "react";
 
-type AudioQueueItem = {
+export type AudioQueueItem = {
   id: string;
   text: string;
   priority: "low" | "normal" | "high";
   messageId?: string;
 };
 
-type AudioQueueState = {
+export type AudioQueueState = {
   queue: AudioQueueItem[];
   currentItem: AudioQueueItem | null;
   isProcessing: boolean;

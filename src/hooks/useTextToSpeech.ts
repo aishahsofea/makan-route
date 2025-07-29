@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AudioQueueItem } from "./useAudioQueue";
 
-type TextToSpeechState = {
+export type TextToSpeechState = {
   isPlaying: boolean;
   isPaused: boolean;
   isLoading: boolean;
   error: string | null;
-  currentText: string | null;
+  currentMessage: AudioQueueItem | null;
 };
 
 type VoiceSettings = {
@@ -21,7 +22,7 @@ export const useTextToSpeech = () => {
     isPaused: false,
     isLoading: false,
     error: null,
-    currentText: null,
+    currentMessage: null,
   });
 
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
@@ -57,7 +58,8 @@ export const useTextToSpeech = () => {
   }, [voiceSettings.voice]);
 
   const speak = useCallback(
-    (text: string) => {
+    (message: AudioQueueItem) => {
+      const { text } = message;
       if (!text.trim()) return;
 
       window.speechSynthesis.cancel(); // Stop any ongoing speech
@@ -66,7 +68,7 @@ export const useTextToSpeech = () => {
         ...prev,
         isLoading: true,
         error: null,
-        currentText: text,
+        currentMessage: message,
       }));
 
       const utterance = new SpeechSynthesisUtterance(text);
@@ -90,7 +92,7 @@ export const useTextToSpeech = () => {
           ...prev,
           isPlaying: false,
           isPaused: false,
-          currentText: null,
+          currentMessage: null,
         }));
       };
 
@@ -101,7 +103,7 @@ export const useTextToSpeech = () => {
           isPaused: false,
           isLoading: false,
           error: `Speech synthesis error: ${event.error}`,
-          currentText: null,
+          currentMessage: null,
         }));
       };
 
@@ -137,7 +139,7 @@ export const useTextToSpeech = () => {
       ...prev,
       isPlaying: false,
       isPaused: false,
-      currentText: null,
+      currentMessage: null,
     }));
   }, []);
 

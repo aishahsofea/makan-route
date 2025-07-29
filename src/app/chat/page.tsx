@@ -418,7 +418,9 @@ export default function ChatPage() {
                         {/* Voice controls - for assistant messages */}
                         <div className="flex items-center justify-end opacity-60 hover:opacity-100 transition-opacity">
                           <VoicePlayButton
+                            messageId={message.id}
                             text={message.content}
+                            autoPlayTTSState={autoPlay.tts.state}
                             size="sm"
                             variant="light"
                           />

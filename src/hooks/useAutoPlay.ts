@@ -37,7 +37,7 @@ export const useAutoPlay = ({ currentConversationId }: AutoPlayArguments) => {
   // Play current item
   useEffect(() => {
     if (audioQueue.state.currentItem && !tts.state.isPlaying) {
-      tts.speak(audioQueue.state.currentItem.text);
+      tts.speak(audioQueue.state.currentItem);
     }
   }, [audioQueue.state.currentItem]);
 
@@ -83,5 +83,11 @@ export const useAutoPlay = ({ currentConversationId }: AutoPlayArguments) => {
     []
   );
 
-  return { settings, audioQueue, tts, queueMessage, updateSettings };
+  return {
+    settings,
+    audioQueue,
+    tts,
+    queueMessage,
+    updateSettings,
+  };
 };
