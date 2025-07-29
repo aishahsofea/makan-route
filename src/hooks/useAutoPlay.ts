@@ -8,7 +8,11 @@ type AutoPlaySettings = {
   assistantOnly: boolean;
 };
 
-export const useAutoPlay = () => {
+type AutoPlayArguments = {
+  currentConversationId?: string;
+};
+
+export const useAutoPlay = ({ currentConversationId }: AutoPlayArguments) => {
   const [settings, setSettings] = useState<AutoPlaySettings>({
     enabled: false,
     newMessagesOnly: true,
@@ -19,9 +23,9 @@ export const useAutoPlay = () => {
   const tts = useTextToSpeech();
 
   useEffect(() => {
-    // Cancel any ongoing speech when the page reloads
+    // Cancel any ongoing speech when the page reloads or conversation changes
     window.speechSynthesis.cancel();
-  }, []);
+  }, [currentConversationId]);
 
   // Process queue automatically
   useEffect(() => {

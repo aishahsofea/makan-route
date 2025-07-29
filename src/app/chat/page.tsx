@@ -10,7 +10,7 @@ import {
   renderMessageWithImages,
 } from "@/utils/renderMessagePart";
 import { Message, useChat } from "@ai-sdk/react";
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent, useRef } from "react";
 import { Menu, X, ChevronLeft, ChevronRight, Volume1Icon } from "lucide-react";
 import { VoicePlayButton } from "@/components/VoicePlayButton";
 import { useAutoPlay } from "@/hooks/useAutoPlay";
@@ -18,6 +18,8 @@ import { useVoicePersonas } from "@/hooks/useVoicePersonas";
 import { UIMessage } from "ai";
 import { Button, Switch } from "@heroui/react";
 import { VoiceSettingsModal } from "@/components/VoiceSettingsModal";
+
+type ResponseState = "idle" | "streaming" | "ready";
 
 export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,6 +29,7 @@ export default function ChatPage() {
     new Map()
   );
   const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false);
+  const [responseState, setResponseState] = useState<ResponseState>("idle");
   const {
     currentConversationId,
     userId,
@@ -36,7 +39,7 @@ export default function ChatPage() {
   } = useConversation();
   const { messages, input, status, setInput, handleSubmit, setMessages } =
     useChat({
-      id: currentConversationId, // <-- add this line to reset chat state per conversation
+      id: currentConversationId, // <-- reset chat state per conversation
       maxSteps: 5,
       body: {
         conversationId: currentConversationId,
@@ -60,8 +63,10 @@ export default function ChatPage() {
         }
       },
     });
-  const autoPlay = useAutoPlay();
+
+  const autoPlay = useAutoPlay({ currentConversationId });
   const voicePersonas = useVoicePersonas();
+  const lastMessageRef = useRef<UIMessage | null>(null);
 
   // Load conversation history when conversation changes
   useEffect(() => {
@@ -74,23 +79,37 @@ export default function ChatPage() {
     }
   }, [currentConversationId]);
 
-  // Auto-play new assistant messages
-  useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages.at(-1) as UIMessage;
-      if (lastMessage.role === "assistant") {
-        const persona = voicePersonas.getPersonaForMessage(lastMessage.content);
-        voicePersonas.setActivePersona(persona);
+  const getLastMessageByAI = () => {
+    return messages.length > 0
+      ? (messages.filter((msg) => msg.role === "assistant").at(-1) as UIMessage)
+      : null;
+  };
 
-        autoPlay.queueMessage(
-          lastMessage.content,
-          `${lastMessage.id}`,
-          lastMessage.role,
-          "normal"
-        );
-      }
+  useEffect(() => {
+    const currentLastMessage = getLastMessageByAI();
+    const previousLastMessage = lastMessageRef.current;
+
+    if (
+      currentLastMessage &&
+      currentLastMessage.id !== previousLastMessage?.id &&
+      currentLastMessage.role === "assistant" &&
+      responseState === "ready"
+    ) {
+      const persona = voicePersonas.getPersonaForMessage(
+        currentLastMessage.content
+      );
+      voicePersonas.setActivePersona(persona);
+
+      autoPlay.queueMessage(
+        currentLastMessage.content,
+        currentLastMessage.id,
+        currentLastMessage.role,
+        "normal"
+      );
+
+      lastMessageRef.current = currentLastMessage;
     }
-  }, [messages.length]);
+  }, [messages, responseState]);
 
   // Wrap handleSubmit to ensure a conversation exists before sending a message
   const handleUserSubmit = async (e: FormEvent, images?: any[]) => {
@@ -169,7 +188,13 @@ export default function ChatPage() {
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          setResponseState(done ? "ready" : "streaming");
+          if (done) {
+            setTimeout(() => {
+              setResponseState("idle");
+            }, 1000);
+            break;
+          }
 
           const parsedContent = parseStreamResponse(value);
           assistantMessage += parsedContent;
